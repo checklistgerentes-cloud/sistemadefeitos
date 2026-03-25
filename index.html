@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShoeMix — Gestão de NFs de Defeitos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0c10;--surface:#111318;--surface2:#181c24;--border:#252a35;
+    --accent:#f0a500;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;
+    --yellow:#eab308;--gray:#6b7280;--text:#e8eaf0;--text2:#9ca3af;--radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:auto}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px}
+  .logo span{color:var(--accent)}
+  .header-stats{display:flex;gap:24px}
+  .hstat{text-align:center}
+  .hstat .val{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--accent)}
+  .hstat .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+  .nav-modules{background:var(--surface2);border-bottom:1px solid var(--border);padding:0 32px;display:flex;gap:4px}
+  .nav-btn{padding:14px 22px;background:none;border:none;border-bottom:3px solid transparent;color:var(--text2);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .2s;margin-bottom:-1px}
+  .nav-btn:hover{color:var(--text)}
+  .nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .container{max-width:1400px;margin:0 auto;padding:32px 24px;min-width:0}
+  .page{display:none}
+  .page.active{display:block;animation:fadeIn .2s}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .alerts-section{margin-bottom:24px}
+  .alert-card{background:linear-gradient(135deg,#2a1a00,#1a1200);border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:10px;animation:pulseAlert 2s infinite}
+  @keyframes pulseAlert{0%,100%{box-shadow:0 0 0 0 rgba(240,165,0,.2)}50%{box-shadow:0 0 0 6px rgba(240,165,0,0)}}
+  .alert-icon{font-size:22px}
+  .alert-text{flex:1}
+  .alert-text strong{color:var(--accent);font-size:14px}
+  .alert-text p{font-size:12px;color:var(--text2);margin-top:2px}
+  .alert-days{background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:28px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+  .stat-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .stat-card::before{content:'';position:absolute;inset:0;opacity:.04;border-radius:var(--radius)}
+  .stat-card.total::before{background:var(--accent)}.stat-card.emitida::before{background:var(--blue)}.stat-card.aguardando::before{background:var(--yellow)}.stat-card.coletada::before{background:var(--green)}.stat-card.nao-coletada::before{background:var(--red)}.stat-card.cancelada::before{background:var(--gray)}.stat-card.resolvida::before{background:#a78bfa}.stat-card.negociando::before{background:#f97316}
+  .stat-icon{font-size:24px;margin-bottom:10px}
+  .stat-value{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;line-height:1}
+  .stat-label{font-size:12px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
+  .tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .tab{padding:10px 20px;font-family:'Syne',sans-serif;font-weight:600;font-size:13px;border:none;background:none;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;margin-bottom:-1px}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .toolbar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+  .search-box{flex:1;min-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
+  .search-box:focus{border-color:var(--accent)}
+  .search-box::placeholder{color:var(--text2)}
+  select.filter-select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+  select.filter-select:focus{border-color:var(--accent)}
+  .btn{padding:10px 20px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+  .btn-primary{background:var(--accent);color:#000}
+  .btn-primary:hover{background:#ffb820;transform:translateY(-1px)}
+  .btn-danger{background:transparent;border:1px solid var(--red);color:var(--red)}
+  .btn-danger:hover{background:var(--red);color:#fff}
+  .btn-sm{padding:6px 12px;font-size:12px}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-blue{background:var(--blue);color:#fff}
+  .btn-blue:hover{background:#2563eb}
+  .table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;min-width:1000px}
+  thead{background:var(--surface2)}
+  th{padding:12px 16px;text-align:left;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);white-space:nowrap}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:var(--surface2)}
+  td{padding:14px 16px;font-size:13px;vertical-align:middle}
+  .td-nome{font-family:'Syne',sans-serif;font-weight:600}
+  .td-nf{font-family:'Syne',sans-serif;color:var(--accent);font-weight:700}
+  .td-cnpj{font-size:12px;color:var(--text2);font-family:monospace;letter-spacing:.5px}
+  .valor-cell{font-family:'Syne',sans-serif;font-weight:700;color:var(--green)}
+  .actions-cell{display:flex;gap:6px;white-space:nowrap;min-width:110px}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;font-family:'Syne',sans-serif;letter-spacing:.3px}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%}
+  .badge-emitida{background:rgba(59,130,246,.15);color:#60a5fa}.badge-emitida::before{background:#60a5fa}
+  .badge-aguardando{background:rgba(234,179,8,.15);color:#fbbf24}.badge-aguardando::before{background:#fbbf24;animation:blink 1.5s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .badge-coletada{background:rgba(34,197,94,.15);color:#4ade80}.badge-coletada::before{background:#4ade80}
+  .badge-nao-coletada{background:rgba(239,68,68,.15);color:#f87171}.badge-nao-coletada::before{background:#f87171}
+  .badge-cancelada{background:rgba(107,114,128,.15);color:#9ca3af}.badge-cancelada::before{background:#9ca3af}
+  .badge-ativa{background:rgba(34,197,94,.15);color:#4ade80}.badge-ativa::before{background:#4ade80}
+  .badge-inativa{background:rgba(107,114,128,.15);color:#9ca3af}.badge-inativa::before{background:#9ca3af}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;justify-content:center;align-items:center;padding:20px}
+  .modal-overlay.open{display:flex;animation:fadeIn .2s}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;animation:slideUp .25s cubic-bezier(.4,0,.2,1)}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .modal-lg{max-width:780px}
+  .modal-header{padding:24px 28px 18px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:1}
+  .modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+  .modal-subtitle{color:var(--text2);font-size:13px;margin-top:2px}
+  .modal-close{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px;line-height:1}
+  .modal-close:hover{color:var(--text)}
+  .modal-body{padding:24px 28px}
+  .modal-footer{padding:0 28px 24px;display:flex;gap:10px;justify-content:flex-end}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-group{display:flex;flex-direction:column;gap:6px}
+  .form-group.full{grid-column:1/-1}
+  .form-group.col2{grid-column:span 2}
+  label{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+  input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;width:100%}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:80px}
+  .form-section-title{grid-column:1/-1;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;padding-top:8px;border-top:1px solid var(--border);margin-top:4px}
+  .hint{font-size:11px;color:var(--text2);margin-top:2px}
+  .conditional-section{grid-column:1/-1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:none}
+  .conditional-section.visible{display:block;animation:fadeIn .2s}
+  .conditional-section .form-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .lojas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .loja-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all .2s;position:relative}
+  .loja-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .loja-card-header{display:flex;align-items:flex-start;margin-bottom:14px}
+  .loja-numero{width:44px;height:44px;background:var(--accent);color:#000;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;flex-shrink:0}
+  .loja-card-info{flex:1;margin-left:12px}
+  .loja-card-nome{font-family:'Syne',sans-serif;font-weight:700;font-size:15px}
+  .loja-detail-row{display:flex;gap:8px;font-size:12px;margin-bottom:6px;align-items:flex-start}
+  .loja-detail-row .icon{width:16px;flex-shrink:0}
+  .loja-detail-row .val{color:var(--text2);line-height:1.4}
+  .loja-detail-row .val strong{color:var(--text)}
+  .loja-nf-count{position:absolute;top:12px;right:12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2);font-family:'Syne',sans-serif}
+  .cobrar-options{display:grid;gap:12px;margin-top:16px}
+  .cobrar-option{background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s}
+  .cobrar-option:hover{border-color:var(--accent)}
+  .cobrar-option.selected{border-color:var(--accent);background:rgba(240,165,0,.07)}
+  .cobrar-option-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px}
+  .cobrar-option-desc{font-size:12px;color:var(--text2)}
+  .cobrar-sub{display:none;margin-top:12px}
+  .cobrar-sub.visible{display:block;animation:fadeIn .2s}
+  .file-upload-area{border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;margin-top:8px}
+  .file-upload-area:hover{border-color:var(--accent)}
+  .file-upload-area.has-file{border-color:var(--green);background:rgba(34,197,94,.05)}
+  .upload-icon{font-size:32px;margin-bottom:8px}
+  .upload-text{font-size:13px;color:var(--text2)}
+  .upload-name{font-size:13px;color:var(--green);font-weight:500;margin-top:4px}
+  .detail-panel{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+  .detail-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .detail-row:last-child{border-bottom:none}
+  .detail-key{color:var(--text2)}
+  .detail-val{font-weight:500;text-align:right}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+  .empty-state .empty-icon{font-size:48px;margin-bottom:16px;opacity:.5}
+  .empty-state h3{font-family:'Syne',sans-serif;font-size:18px;color:var(--text);margin-bottom:8px}
+  .alerta-30{background:rgba(240,165,0,.12);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--accent);display:inline-block;margin-top:4px}
+  .alerta-coleta{background:rgba(249,115,22,.12);border:1px solid #f97316;border-radius:8px;padding:6px 10px;font-size:11px;color:#f97316;display:inline-block;margin-top:4px}
+  .resolucao-badge{font-size:11px}
+  .resolucao-badge.deposito{color:var(--blue)}
+  .resolucao-badge.abatimento{color:var(--yellow)}
+  .resolucao-badge.desconto{color:var(--green)}
+  .resolucao-badge.pendente{color:var(--text2)}
+  .resolucao-badge.negociacao{color:#f97316}
+  .cobrar-option.negociando{border-color:#f97316!important;background:rgba(249,115,22,.06)!important}
+  .negoc-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 14px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:8px}
+  .negoc-header span{font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:#f97316}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .section-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px}
+  .section-sub{font-size:13px;color:var(--text2);margin-top:2px}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+  @media(max-width:768px){
+    header{padding:0 16px}.header-stats{display:none}
+    .modal{max-height:92vh;border-radius:16px 16px 0 0;position:fixed;bottom:0;left:0;right:0;width:100%;max-width:100%!important;margin:0}
+    .modal-overlay{align-items:flex-end;padding:0}
+    input,select,textarea{font-size:16px!important;padding:12px 14px!important}
+    .btn{min-height:44px;font-size:14px!important}
+    .btn-sm{min-height:38px;padding:8px 12px!important;font-size:12px!important}
+    .cobrar-option{padding:14px!important}
+    .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+    .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
+    .actions-cell{flex-wrap:wrap;gap:4px}
+    .toolbar{gap:8px}
+    .json-toolbar{width:100%;justify-content:flex-start}
+    .header{height:auto;padding:10px 16px}
+    .container{padding:16px}.form-grid{grid-template-columns:1fr}
+    .form-group.full,.form-group.col2{grid-column:1}.nav-modules{padding:0 16px}
+    .nav-btn{padding:12px 14px;font-size:12px}
+  }
+  /* AUTOSAVE */
+  .save-indicator{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);transition:all .4s;padding:4px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border)}
+  .save-indicator.saving{color:var(--yellow);border-color:rgba(234,179,8,.5)}
+  .save-indicator.saved{color:var(--green);border-color:rgba(34,197,94,.5)}
+  .save-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+  .save-indicator.saving .save-dot{animation:blink .6s infinite}
+  .draft-banner{background:linear-gradient(135deg,#1a1500,#120f00);border:1px solid var(--yellow);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;font-size:13px}
+  .draft-banner strong{color:var(--yellow)}
+  .backup-banner{background:linear-gradient(135deg,#0a1a0a,#061206);border:1px solid var(--green);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;font-size:13px;margin-bottom:16px}
+  .backup-banner strong{color:var(--green)}
+  .json-toolbar{display:flex;gap:8px;align-items:center}
+  .btn-green{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);color:#4ade80}
+  .btn-green:hover{background:var(--green);color:#000;border-color:var(--green)}
+  .btn-yellow{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.4);color:#fbbf24}
+  .btn-yellow:hover{background:var(--yellow);color:#000;border-color:var(--yellow)}
+  /* RESUMO */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:28px}
+  .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:transform .2s,border-color .2s;position:relative;overflow:hidden}
+  .kpi-card::before{content:'';position:absolute;inset:0;opacity:.04}
+  .kpi-card.c-acc::before{background:var(--accent)}.kpi-card.c-grn::before{background:var(--green)}.kpi-card.c-blue::before{background:var(--blue)}.kpi-card.c-yel::before{background:var(--yellow)}.kpi-card.c-red::before{background:var(--red)}
+  .kpi-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .kpi-icon{font-size:20px;margin-bottom:8px}
+  .kpi-value{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;line-height:1}
+  .kpi-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
+  .kpi-sub{font-size:12px;color:var(--text2);margin-top:3px}
+  .resumo-sec{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;margin-top:4px}
+  .pct-wrap{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .pct-bg{width:60px;height:5px;background:var(--border);border-radius:3px;flex-shrink:0}
+  .pct-bar-inner{height:5px;border-radius:3px;background:var(--green);transition:width .5s}
+  .td-marca{font-family:'Syne',sans-serif;font-weight:700;color:#a78bfa;font-size:12px}
+  .row-total td{background:rgba(240,165,0,.07)!important;font-weight:700}
+  /* Colunas — scroll horizontal liberado */
+  table{table-layout:auto;width:100%;min-width:1100px}
+  table th:nth-child(1),table td:nth-child(1){min-width:160px}  /* Loja */
+  table th:nth-child(2),table td:nth-child(2){min-width:70px}   /* Marca */
+  table th:nth-child(3),table td:nth-child(3){min-width:70px}   /* Nº NF */
+  table th:nth-child(4),table td:nth-child(4){min-width:80px}   /* Emissão */
+  table th:nth-child(5),table td:nth-child(5){min-width:55px}   /* Pares */
+  table th:nth-child(6),table td:nth-child(6){min-width:90px}   /* Valor */
+  table th:nth-child(7),table td:nth-child(7){min-width:90px}   /* Status */
+  table th:nth-child(8),table td:nth-child(8){min-width:100px}  /* Coleta */
+  table th:nth-child(9),table td:nth-child(9){min-width:130px}  /* Resolução */
+  table th:nth-child(10),table td:nth-child(10){min-width:140px;width:140px} /* Ações */
+  table td{white-space:nowrap}
+  table td:nth-child(1){white-space:normal;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+  table td:nth-child(8){white-space:normal;line-height:1.4}
+  table td:nth-child(9){white-space:nowrap;overflow:hidden;max-width:130px}
+  .resolucao-badge{display:inline-block;vertical-align:middle;max-width:75px;overflow:hidden;text-overflow:ellipsis}
+  .actions-cell{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;width:100%}
+  #tableSection.hidden #tableBody{display:none}
+  #tableSection.hidden #emptyState{display:none!important}
+  #tableSection.hidden .table-wrap{border-bottom:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Shoe<span>Mix</span> <span style="color:var(--text2);font-size:12px;font-weight:400">Gestão de NFs de Defeitos</span></div>
+  <div class="header-stats">
+    <div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Salvo</span></div>
+    <div class="hstat"><div class="val" id="hLojas">0</div><div class="lbl">Lojas</div></div>
+    <div class="hstat"><div class="val" id="hTotal">0</div><div class="lbl">Total NFs</div></div>
+    <div class="hstat"><div class="val" id="hValor">R$ 0</div><div class="lbl">Valor Total</div></div>
+    <div class="hstat"><div class="val" id="hAlertas" style="color:var(--red)">0</div><div class="lbl">⚠ Cobranças</div></div>
+    <div class="hstat"><div class="val" id="hAguardando" style="color:#f97316">0</div><div class="lbl">🚚 Coletas Pend.</div></div>
+  </div>
+</header>
+
+<div class="nav-modules">
+  <button class="nav-btn active" onclick="setPage('notas')">📋 Notas Fiscais</button>
+  <button class="nav-btn" onclick="setPage('lojas')">🏪 Lojas da Rede</button>
+  <button class="nav-btn" onclick="setPage('resumo')">📊 Resumo Mensal</button>
+</div>
+
+<div class="container">
+
+  <!-- PAGE NOTAS -->
+  <div class="page active" id="page-notas">
+    <div id="draftBanner" class="draft-banner" style="display:none;margin-bottom:16px">
+      <span style="font-size:20px">📝</span>
+      <div style="flex:1"><strong>Rascunho não salvo</strong> — Você tem um formulário aberto com dados preenchidos.<br><span style="color:var(--text2);font-size:12px" id="draftInfo"></span></div>
+      <button class="btn btn-yellow btn-sm" onclick="restoreDraft()">↩ Restaurar</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearDraft()">✕</button>
+    </div>
+    <div id="backupBanner" class="backup-banner" style="display:none">
+      <span style="font-size:24px">💾</span>
+      <div style="flex:1">
+        <strong>Lembrete de Backup</strong><br>
+        <span style="color:var(--text2);font-size:12px" id="backupBannerMsg"></span>
+      </div>
+      <button class="btn btn-sm" onclick="exportJSONBackup()" style="background:var(--green);color:#000;font-family:Syne,sans-serif;font-weight:700;white-space:nowrap">⬇ Fazer Backup Agora</button>
+      <button class="btn btn-ghost btn-sm" onclick="dismissBackup()" style="white-space:nowrap">Lembrar depois</button>
+      <button class="btn btn-ghost btn-sm" onclick="snoozeBackup(7)" title="Não lembrar por 7 dias" style="white-space:nowrap">✕</button>
+    </div>
+    <div class="alerts-section" id="alertsSection"></div>
+    <div class="stats-grid">
+      <div class="stat-card total"><div class="stat-icon">📋</div><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-card emitida"><div class="stat-icon">📄</div><div class="stat-value" id="statEmitida">0</div><div class="stat-label">Emitida</div></div>
+      <div class="stat-card aguardando"><div class="stat-icon">🕐</div><div class="stat-value" id="statAguardando">0</div><div class="stat-label">Aguard. Coleta</div></div>
+      <div class="stat-card coletada"><div class="stat-icon">✅</div><div class="stat-value" id="statColetada">0</div><div class="stat-label">Coletada</div></div>
+      <div class="stat-card nao-coletada"><div class="stat-icon">❌</div><div class="stat-value" id="statNaoColetada">0</div><div class="stat-label">Não Coletada</div></div>
+      <div class="stat-card cancelada"><div class="stat-icon">🚫</div><div class="stat-value" id="statCancelada">0</div><div class="stat-label">Cancelada</div></div>
+      <div class="stat-card negociando"><div class="stat-icon">🤝</div><div class="stat-value" id="statNegociacao">0</div><div class="stat-label">Em Negociação</div></div>
+      <div class="stat-card resolvida"><div class="stat-icon">🔁</div><div class="stat-value" id="statResolvida" style="font-size:20px">0 (0%)</div><div class="stat-label">Resolvidas</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('todas')">Todas</button>
+      <button class="tab" onclick="setTab('emitida')">Emitida</button>
+      <button class="tab" onclick="setTab('aguardando-coleta')">Aguard. Coleta</button>
+      <button class="tab" onclick="setTab('coletada')">Coletada</button>
+      <button class="tab" onclick="setTab('nao-coletada')">Não Coletada</button>
+      <button class="tab" onclick="setTab('cancelada')">Cancelada</button>
+      <button class="tab" onclick="setTab('cobranca')" style="color:var(--accent)">⚠ Cobranças</button>
+      <button class="tab" onclick="setTab('coleta-pendente')" style="color:#f97316">🚚 Coletas Pend.</button>
+      <button class="tab" onclick="setTab('resolvidas')" style="color:#4ade80">✅ Resolvidas</button>
+    </div>
+    <div class="toolbar">
+      <input class="search-box" type="text" id="searchInput" placeholder="🔍  Buscar por loja, NF..." oninput="debounceRender()">
+      <select class="filter-select" id="filterLoja" onchange="renderTable()"><option value="">Todas as Lojas</option></select>
+      <button class="btn btn-primary" onclick="openModalNF()">+ Nova NF</button>
+      <div class="json-toolbar">
+        <button class="btn btn-green btn-sm" onclick="exportJSON()" title="Exportar todos os dados como JSON">⬇ Exportar JSON</button>
+        <button class="btn btn-yellow btn-sm" onclick="document.getElementById('importFile').click()" title="Importar dados de um arquivo JSON">⬆ Importar JSON</button>
+        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importJSON(this)">
+        <button class="btn btn-sm" onclick="exportExcel()" title="Exportar lista de NFs para Excel" style="background:rgba(34,197,94,.15);color:#4ade80;border:1px solid #4ade80">📊 Exportar Excel</button>
+      </div>
+    </div>
+    <div id="tableSection">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Loja</th>
+            <th class="col-marca">Marca</th>
+            <th>Nº NF</th>
+            <th class="col-emissao">Emissão</th>
+            <th class="col-pares">Pares</th>
+            <th class="col-valor">Valor Líquido</th>
+            <th>Status</th>
+            <th class="col-coleta">Coleta</th>
+            <th class="col-resolucao">Resolução</th>
+            <th style="text-align:right;white-space:nowrap;min-width:110px">Ações <button id="tabToggleArrow" onclick="toggleTable()" title="Mostrar/ocultar registros" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text2);padding:0 0 0 6px;vertical-align:middle;transition:color .2s" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--text2)'">▲</button></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-icon">📦</div><h3>Nenhuma nota encontrada</h3>
+        <p>Clique em <strong style="color:var(--accent)">+ Nova NF</strong> para cadastrar</p>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- PAGE LOJAS -->
+  <div class="page" id="page-lojas">
+    <div class="section-header">
+      <div><div class="section-title">🏪 Lojas da Rede</div><div class="section-sub" id="lojasCount">Nenhuma loja cadastrada</div></div>
+      <button class="btn btn-primary" onclick="openModalLoja()">+ Cadastrar Loja</button>
+    </div>
+    <div class="toolbar">
+      <input class="search-box" type="text" id="searchLoja" placeholder="🔍  Buscar por nome, número, CNPJ, cidade..." oninput="debounceRenderLojas()" style="max-width:420px">
+      <select class="filter-select" id="filterStatusLoja" onchange="renderLojas()">
+        <option value="">Todas</option><option value="ativa">Ativas</option><option value="inativa">Inativas</option>
+      </select>
+    </div>
+    <div id="lojasGrid" class="lojas-grid"></div>
+    <div id="lojasEmpty" class="empty-state" style="display:none">
+      <div class="empty-icon">🏪</div><h3>Nenhuma loja encontrada</h3>
+      <p>Clique em <strong style="color:var(--accent)">+ Cadastrar Loja</strong> para começar</p>
+    </div>
+  </div>
+
+  <!-- PAGE RESUMO MENSAL -->
+  <div class="page" id="page-resumo">
+    <div class="section-header" style="flex-wrap:wrap;gap:12px">
+      <div><div class="section-title">📊 Resumo Mensal</div><div class="section-sub" id="resumoSub">Análise por período</div></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select class="filter-select" id="resumoAno" onchange="renderResumo()"></select>
+        <select class="filter-select" id="resumoMesFilt" onchange="renderResumo()"><option value="">Todos os Meses</option><option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Marco</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select>
+        <select class="filter-select" id="resumoMarcaFilt" onchange="renderResumo()"><option value="">Todas as Marcas</option></select>
+        <select class="filter-select" id="resumoLojaFilt" onchange="renderResumo()"><option value="">Todas as Lojas</option></select>
+        <button class="btn btn-green btn-sm" onclick="exportResumoCSV()">⬇ Exportar CSV</button>
+      </div>
+    </div>
+    <div class="kpi-grid" id="resumoKpis"></div>
+    <div class="resumo-sec">📅 Por Mês</div>
+    <div class="table-wrap" style="margin-bottom:28px">
+      <table>
+        <thead><tr><th>Mês / Ano</th><th>Notas</th><th>Pares</th><th>Valor Total</th><th>Coletadas</th><th>Não Coletadas</th><th>Resolvidas</th><th>% Resolvido</th></tr></thead>
+        <tbody id="resumoMesBody"></tbody>
+      </table>
+      <div id="resumoMesEmpty" class="empty-state" style="display:none"><div class="empty-icon">📊</div><h3>Sem dados para este período</h3><p>Cadastre notas fiscais para visualizar</p></div>
+    </div>
+    <div class="resumo-sec">👟 Por Marca</div>
+    <div class="table-wrap" style="margin-bottom:28px">
+      <table>
+        <thead><tr><th>Marca</th><th>Notas</th><th>Pares</th><th>Valor Total</th><th>Coletadas</th><th>Resolvidas</th><th>% Resolvido</th></tr></thead>
+        <tbody id="resumoMarcaBody"></tbody>
+      </table>
+      <div id="resumoMarcaEmpty" class="empty-state" style="display:none"><div class="empty-icon">👟</div><h3>Sem dados</h3></div>
+    </div>
+    <div class="resumo-sec">🏪 Por Loja</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Loja</th><th>Notas</th><th>Pares</th><th>Valor Total</th><th>Coletadas</th><th>Resolvidas</th><th>% Resolvido</th></tr></thead>
+        <tbody id="resumoLojaBody"></tbody>
+      </table>
+      <div id="resumoLojaEmpty" class="empty-state" style="display:none"><div class="empty-icon">🏪</div><h3>Sem dados</h3></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL LOJA -->
+<div class="modal-overlay" id="modalLoja">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div><div class="modal-title" id="lojaModalTitle">Cadastrar Loja</div><div class="modal-subtitle">Preencha os dados da loja da rede</div></div>
+      <button class="modal-close" onclick="closeModalLoja()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-section-title">📋 Identificação</div>
+        <div class="form-group">
+          <label>Número da Loja *</label>
+          <input type="text" id="lNumero" placeholder="Ex: 001, 002, L-05...">
+          <span class="hint">Código interno na rede</span>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="lStatus"><option value="ativa">Ativa</option><option value="inativa">Inativa</option></select>
+        </div>
+        <div class="form-group full">
+          <label>Razão Social *</label>
+          <input type="text" id="lNome" placeholder="Ex: Calçados São Paulo Ltda">
+        </div>
+        <div class="form-group full">
+          <label>Nome Fantasia</label>
+          <input type="text" id="lFantasia" placeholder="Nome fantasia (se diferente da razão social)">
+        </div>
+        <div class="form-section-title">🧾 Dados Fiscais</div>
+        <div class="form-group">
+          <label>CNPJ *</label>
+          <input type="text" id="lCNPJ" placeholder="00.000.000/0000-00" oninput="maskCNPJ(this)" maxlength="18">
+        </div>
+        <div class="form-group">
+          <label>Inscrição Estadual (IE)</label>
+          <input type="text" id="lIE" placeholder="000.000.000.000">
+        </div>
+        <div class="form-section-title">📍 Endereço</div>
+        <div class="form-group">
+          <label>CEP *</label>
+          <input type="text" id="lCEP" placeholder="00000-000" oninput="maskCEP(this)" maxlength="9" onblur="buscaCEP()">
+        </div>
+        <div class="form-group">
+          <label>Estado (UF)</label>
+          <select id="lUF">
+            <option value="">Selecione</option>
+            <option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option>
+          </select>
+        </div>
+        <div class="form-group col2">
+          <label>Logradouro</label>
+          <input type="text" id="lLogradouro" placeholder="Rua, Avenida, Praça...">
+        </div>
+        <div class="form-group">
+          <label>Número</label>
+          <input type="text" id="lNumEnd" placeholder="Nº / S/N">
+        </div>
+        <div class="form-group">
+          <label>Complemento</label>
+          <input type="text" id="lComplemento" placeholder="Sala, Loja, Bloco...">
+        </div>
+        <div class="form-group">
+          <label>Bairro</label>
+          <input type="text" id="lBairro" placeholder="Bairro">
+        </div>
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" id="lCidade" placeholder="Cidade">
+        </div>
+        <div class="form-section-title">📞 Contato</div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="lTelefone" placeholder="(00) 00000-0000" oninput="maskFone(this)" maxlength="15">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp</label>
+          <input type="text" id="lWhatsapp" placeholder="(00) 00000-0000" oninput="maskFone(this)" maxlength="15">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="lEmail" placeholder="loja@exemplo.com.br">
+        </div>
+        <div class="form-group">
+          <label>Responsável / Gerente</label>
+          <input type="text" id="lResponsavel" placeholder="Nome do responsável">
+        </div>
+        <div class="form-group full">
+          <label>Observações</label>
+          <textarea id="lObs" placeholder="Informações adicionais..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalLoja()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLoja()">💾 Salvar Loja</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NF -->
+<div class="modal-overlay" id="modalNF">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title" id="modalTitle">Nova Nota Fiscal</div><div class="modal-subtitle">Preencha os dados da NF com defeito</div></div>
+      <button class="modal-close" onclick="closeModalNF()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- UPLOAD PDF PARA LEITURA AUTOMÁTICA -->
+      <div id="nfUploadArea" onclick="document.getElementById('nfPdfInput').click()" style="border:2px dashed var(--accent);border-radius:10px;padding:18px 16px;text-align:center;cursor:pointer;margin-bottom:18px;background:rgba(240,165,0,.04);transition:background .2s" onmouseenter="this.style.background='rgba(240,165,0,.09)'" onmouseleave="this.style.background='rgba(240,165,0,.04)'">
+        <div style="font-size:26px;margin-bottom:4px">📄</div>
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--accent)">Anexar PDF da Nota Fiscal</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">O sistema lê o PDF e preenche os campos automaticamente</div>
+        <input type="file" id="nfPdfInput" accept=".pdf,image/*" style="display:none" onchange="lerNFcomIA(this)">
+      </div>
+      <div id="nfIaStatus" style="display:none;align-items:center;gap:10px;padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;font-family:Syne,sans-serif;font-weight:600"></div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Loja *</label>
+          <select id="fLoja"><option value="">Selecione a loja...</option></select>
+        </div>
+        <div class="form-group"><label>Número da NF *</label><input type="text" id="fNumero" placeholder="Ex: 000123"></div>
+        <div class="form-group"><label>Data de Emissão *</label><input type="date" id="fDataEmissao"></div>
+        <div class="form-group"><label>Quantidade de Pares *</label><input type="number" id="fPares" placeholder="0" min="1"></div>
+        <div class="form-group"><label>Valor Total Líquido (R$) *</label><input type="text" id="fValor" placeholder="0,00" oninput="formatValor(this)"></div>
+        <div class="form-group full">
+          <label>Status da NF *</label>
+          <select id="fStatus" onchange="onStatusChange()">
+            <option value="">Selecione o status</option>
+            <option value="emitida">Emitida</option>
+            <option value="aguardando-coleta">Aguardando Coleta</option>
+            <option value="coletada">Coletada</option>
+            <option value="nao-coletada">Não Coletada</option>
+            <option value="cancelada">Nota Cancelada</option>
+          </select>
+        </div>
+        <div class="conditional-section" id="sectionColeta">
+          <div class="form-grid">
+            <div class="form-section-title" style="margin-top:0;padding-top:0;border-top:none">📅 Dados da Coleta</div>
+            <div class="form-group"><label>Data da Coleta</label><input type="date" id="fDataColeta"></div>
+            <div class="form-group"><label>Transportadora</label><input type="text" id="fTransportadora" placeholder="Nome da transportadora"></div>
+            <div class="form-group full"><label>Observações da Coleta</label><textarea id="fObsColeta" placeholder="Detalhes..." style="min-height:60px"></textarea></div>
+          </div>
+        </div>
+        <div class="form-group full"><label>Descrição do Defeito</label><textarea id="fDefeito" placeholder="Descreva o defeito dos calçados..."></textarea></div>
+        <div class="form-group full">
+          <label>Marca *</label>
+          <input type="text" id="fMarca" placeholder="Ex: Nike, Adidas, Vizzano, Havaianas..." list="marcasList">
+          <datalist id="marcasList"></datalist>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalNF()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNF()">💾 Salvar NF</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COBRANÇA -->
+<div class="modal-overlay" id="modalCobranca">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">⚠️ Registrar Resolução</div><div class="modal-subtitle" id="cobrancaSubtitle"></div></div>
+      <button class="modal-close" onclick="closeCobranca()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="cobrancaInfo" class="detail-panel"></div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Como será devolvido o valor?</div>
+      <div class="cobrar-options">
+        <div class="cobrar-option" id="opt-negociacao" onclick="selectOpcao('negociacao')">
+          <div class="cobrar-option-title">🤝 Em Negociação</div>
+          <div class="cobrar-option-desc">Registra contato com fábrica/representante — solução ainda não definida</div>
+          <div class="cobrar-sub" id="sub-negociacao">
+            <div class="negoc-header"><span>📋 Registro do contato — aguardando confirmação da fábrica</span></div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+              <div class="form-group"><label>Data do Contato *</label><input type="date" id="fNegocData"></div>
+              <div class="form-group"><label>Contato (Nome)</label><input type="text" id="fNegocContato" placeholder="Nome do representante ou fábrica..."></div>
+              <div class="form-group"><label>Canal</label><select id="fNegocCanal"><option value="">Selecione...</option><option value="Telefone">📞 Telefone</option><option value="WhatsApp">💬 WhatsApp</option><option value="E-mail">✉️ E-mail</option><option value="Visita">🤝 Visita pessoal</option><option value="Outro">Outro</option></select></div>
+              <div class="form-group"><label>Próximo Contato Previsto</label><input type="date" id="fNegocProximo"></div>
+              <div class="form-group full"><label>O que foi discutido / Proposta da fábrica</label><textarea id="fNegocDiscutido" placeholder="Ex: Representante disse que vai consultar a fábrica. Proposta inicial: abatimento em 2 boletos de R$ 620,00..." style="min-height:80px"></textarea></div>
+              <div class="form-group full"><label>Pendências / Próximos passos</label><textarea id="fNegocPendencia" placeholder="Ex: Aguardando retorno até 15/03. Cobrar por WhatsApp caso não responda..." style="min-height:60px"></textarea></div>
+            </div>
+          </div>
+        </div>
+        <div class="cobrar-option" id="opt-abatimento" onclick="selectOpcao('abatimento')">
+          <div class="cobrar-option-title">📄 Abatimento em Boletos</div>
+          <div class="cobrar-option-desc">Valor será abatido em boletos futuros da fábrica</div>
+          <div class="cobrar-sub" id="sub-abatimento">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+              <div class="form-group"><label>Qtd. de Boletos</label><input type="number" id="fQtdBoletos" placeholder="Ex: 3" min="1"></div>
+              <div class="form-group"><label>Valor por Boleto (R$)</label><input type="text" id="fValorBoleto" placeholder="0,00" oninput="formatValor(this)"></div>
+              <div class="form-group full"><label>Observações</label><textarea id="fObsAbatimento" placeholder="Nº dos boletos, datas previstas..." style="min-height:60px"></textarea></div>
+            </div>
+          </div>
+        </div>
+        <div class="cobrar-option" id="opt-deposito" onclick="selectOpcao('deposito')">
+          <div class="cobrar-option-title">🏦 Depósito em Conta</div>
+          <div class="cobrar-option-desc">Fábrica fará depósito/transferência bancária</div>
+          <div class="cobrar-sub" id="sub-deposito">
+            <div class="form-group" style="margin-top:8px"><label>Data do Depósito</label><input type="date" id="fDataDeposito"></div>
+            <div class="form-group" style="margin-top:12px">
+              <label>Comprovante de Depósito</label>
+              <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📎</div>
+                <div class="upload-text">Clique para anexar comprovante</div>
+                <div class="upload-name" id="uploadName" style="display:none"></div>
+              </div>
+              <input type="file" id="fileInput" style="display:none" accept="image/*,.pdf" onchange="handleFile(this)">
+            </div>
+            <div class="form-group" style="margin-top:12px"><label>Observações</label><textarea id="fObsDeposito" placeholder="Banco, agência, conta..." style="min-height:60px"></textarea></div>
+          </div>
+        </div>
+        <div class="cobrar-option" id="opt-desconto" onclick="selectOpcao('desconto')">
+          <div class="cobrar-option-title">🛒 Desconto em Pedidos Futuros</div>
+          <div class="cobrar-option-desc">Valor será descontado nos próximos pedidos à fábrica</div>
+          <div class="cobrar-sub" id="sub-desconto">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+              <div class="form-group"><label>Qtd. de Pedidos</label><input type="number" id="fQtdPedidos" placeholder="Ex: 2" min="1"></div>
+              <div class="form-group"><label>Valor por Pedido (R$)</label><input type="text" id="fValorPedido" placeholder="0,00" oninput="formatValor(this)"></div>
+              <div class="form-group"><label>Pedido / Referência</label><input type="text" id="fRefPedido" placeholder="Nº do pedido ou coleção..."></div>
+              <div class="form-group"><label>Previsão</label><input type="date" id="fPrevPedido"></div>
+              <div class="form-group full"><label>Observações</label><textarea id="fObsDesconto" placeholder="Detalhes do desconto acordado..." style="min-height:60px"></textarea></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCobranca()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCobranca()">✅ Confirmar Resolução</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTATO COLETA -->
+<div class="modal-overlay" id="modalContatoColeta">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📞 Registrar Contato de Coleta</div>
+        <div class="modal-subtitle" id="contatoColetaSubtitle"></div>
+      </div>
+      <button class="modal-close" onclick="closeContatoColeta()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- histórico de contatos anteriores -->
+      <div id="historicoContatoColeta" style="margin-bottom:16px"></div>
+      <!-- novo contato -->
+      <div style="background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.3);border-radius:10px;padding:16px">
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:12px;color:#f97316;margin-bottom:12px;letter-spacing:.4px">NOVO CONTATO</div>
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label>Data do Contato *</label>
+            <input type="date" id="ccData">
+          </div>
+          <div class="form-group">
+            <label>Canal *</label>
+            <select id="ccCanal">
+              <option value="">Selecione...</option>
+              <option value="WhatsApp">💬 WhatsApp</option>
+              <option value="Telefone">📞 Telefone</option>
+              <option value="E-mail">✉️ E-mail</option>
+              <option value="Visita">🤝 Visita pessoal</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Falou com</label>
+            <input type="text" id="ccContato" placeholder="Nome do atendente...">
+          </div>
+          <div class="form-group">
+            <label>Nova Previsão de Coleta</label>
+            <input type="date" id="ccPrevisao">
+          </div>
+          <div class="form-group full">
+            <label>O que foi combinado</label>
+            <textarea id="ccObs" placeholder="Ex: Confirmaram nova coleta para 10/03. Transportadora será Jadlog..." style="min-height:70px"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeContatoColeta()">Cancelar</button>
+      <button class="btn btn-sm" onclick="saveContatoColeta()" style="background:#f97316;color:#fff;font-family:Syne,sans-serif;font-weight:700">💾 Salvar Contato</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var notas=JSON.parse(localStorage.getItem('notas_nf')||'[]');
+var lojas=JSON.parse(localStorage.getItem('lojas_rede')||'[]');
+var editingNFId=null,editingLojaId=null,cobrancaId=null;
+var currentTab='todas',uploadedFileData=null,selectedOpcao=null;
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function formatValor(el){var v=el.value.replace(/\D/g,'');if(!v){el.value='';return}v=(parseInt(v)/100).toFixed(2);el.value=v.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+function parseValor(s){if(!s)return 0;return parseFloat(s.replace(/\./g,'').replace(',','.'))||0}
+function fmtMoney(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtDate(iso){if(!iso)return'—';var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+function today(){return new Date().toISOString().slice(0,10)}
+function daysDiff(d){if(!d)return null;return Math.floor((new Date()-new Date(d))/86400000)}
+function persist(){
+  requestAnimationFrame(function(){
+    localStorage.setItem('notas_nf',JSON.stringify(notas));
+    localStorage.setItem('lojas_rede',JSON.stringify(lojas));
+    showSaveIndicator();
+  });
+}
+function showSaveIndicator(){
+  var el=document.getElementById('saveIndicator');
+  var txt=document.getElementById('saveText');
+  if(!el)return;
+  el.className='save-indicator saving';txt.textContent='Salvando...';
+  clearTimeout(window._saveTimer);
+  window._saveTimer=setTimeout(function(){
+    el.className='save-indicator saved';txt.textContent='Salvo ✓';
+    setTimeout(function(){el.className='save-indicator';txt.textContent='Salvo'},2000);
+  },400);
+}
+// DRAFT: salvar rascunho do form aberto
+function saveDraft(tipo,data){localStorage.setItem('shoemix_draft',JSON.stringify({tipo:tipo,data:data,ts:Date.now()}))}
+function clearDraft(){localStorage.removeItem('shoemix_draft');document.getElementById('draftBanner').style.display='none'}
+function getDraft(){try{return JSON.parse(localStorage.getItem('shoemix_draft')||'null')}catch(e){return null}}
+function checkDraft(){
+  var d=getDraft();
+  if(!d)return;
+  var age=Math.floor((Date.now()-d.ts)/60000);
+  var banner=document.getElementById('draftBanner');
+  var info=document.getElementById('draftInfo');
+  banner.style.display='flex';
+  info.textContent=(d.tipo==='nf'?'Formulário de NF':'Formulário de Loja')+' — salvo há '+age+' min';
+}
+function restoreDraft(){
+  var d=getDraft();if(!d)return;
+  if(d.tipo==='nf'){openModalNF();var fd=d.data;
+    if(fd.lojaId)document.getElementById('fLoja').value=fd.lojaId;
+    if(fd.numero)document.getElementById('fNumero').value=fd.numero;
+    if(fd.dataEmissao)document.getElementById('fDataEmissao').value=fd.dataEmissao;
+    if(fd.pares)document.getElementById('fPares').value=fd.pares;
+    if(fd.valor)document.getElementById('fValor').value=fd.valor;
+    if(fd.status){document.getElementById('fStatus').value=fd.status;onStatusChange();}
+    if(fd.dataColeta)document.getElementById('fDataColeta').value=fd.dataColeta;
+    if(fd.transportadora)document.getElementById('fTransportadora').value=fd.transportadora;
+    if(fd.obsColeta)document.getElementById('fObsColeta').value=fd.obsColeta;
+    if(fd.defeito)document.getElementById('fDefeito').value=fd.defeito;
+  }else if(d.tipo==='loja'){openModalLoja();var ld=d.data;
+    ['numero','nome','nomeFantasia','cnpj','ie','cep','logradouro','numEnd','complemento','bairro','cidade','uf','telefone','whatsapp','email','responsavel','obs','status'].forEach(function(k){
+      var el=document.getElementById('l'+k.charAt(0).toUpperCase()+k.slice(1));
+      if(el&&ld[k])el.value=ld[k];
+    });
+  }
+  clearDraft();
+}
+// Export JSON
+function exportExcel(){
+  var SLLabel={'emitida':'Emitida','aguardando-coleta':'Aguard. Coleta','coletada':'Coletada','nao-coletada':'Não Coletada','cancelada':'Cancelada'};
+  var RLLabel={'abatimento':'Abatimento em Boletos','deposito':'Depósito em Conta','desconto':'Desconto em Pedidos','negociacao':'Em Negociação'};
+  var tabNomes={'todas':'Todas','emitida':'Emitidas','aguardando-coleta':'Aguard_Coleta','coletada':'Coletadas','nao-coletada':'Nao_Coletadas','cancelada':'Canceladas','cobranca':'Cobrancas','coleta-pendente':'Coletas_Pendentes','resolvidas':'Resolvidas'};
+
+  // Filtrar pela aba ativa
+  var alertIds=getAlertNotas().map(function(n){return n.id});
+  var alertAguardIds=getAlertAguardando().map(function(n){return n.id});
+  var notasFiltradas=notas.filter(function(n){
+    if(currentTab==='cobranca')return alertIds.indexOf(n.id)>=0;
+    if(currentTab==='coleta-pendente')return alertAguardIds.indexOf(n.id)>=0;
+    if(currentTab==='resolvidas')return !!(n.resolucao&&n.resolucao.tipo!=='negociacao');
+    if(currentTab!=='todas'&&n.status!==currentTab)return false;
+    return true;
+  });
+
+  var linhas=[['Nº NF','Loja','CNPJ Loja','Data Emissão','Marca','Pares','Valor (R$)','Status','Data Coleta','Transportadora','Resolução','Detalhe Resolução']];
+
+  var notasOrdenadas=notasFiltradas.slice().sort(function(a,b){return a.numero.localeCompare(b.numero,undefined,{numeric:true})});
+
+  notasOrdenadas.forEach(function(n){
+    var loja=lojas.find(function(l){return l.id===n.lojaId});
+    var nomeLoja=loja?'['+loja.numero+'] '+(loja.nomeFantasia||loja.nome):'';
+    var cnpjLoja=loja?loja.cnpj||'':'';
+    var dataEmissao=n.dataEmissao?n.dataEmissao.split('-').reverse().join('/'):'';
+    var dataColeta=n.dataColeta?n.dataColeta.split('-').reverse().join('/'):'';
+    var valor=n.valor?n.valor.toFixed(2).replace('.',','):'0,00';
+    var status=SLLabel[n.status]||n.status||'';
+
+    var resolTipo='';
+    var resolDetalhe='';
+    if(n.resolucao){
+      resolTipo=RLLabel[n.resolucao.tipo]||n.resolucao.tipo||'';
+      if(n.resolucao.tipo==='abatimento'){
+        resolDetalhe=(n.resolucao.qtdBoletos||'')+'x de R$ '+(n.resolucao.valorBoleto||'');
+        if(n.resolucao.obs)resolDetalhe+=' | '+n.resolucao.obs;
+      } else if(n.resolucao.tipo==='deposito'){
+        resolDetalhe='Depósito em '+(n.resolucao.dataDeposito?n.resolucao.dataDeposito.split('-').reverse().join('/'):'');
+        if(n.resolucao.obs)resolDetalhe+=' | '+n.resolucao.obs;
+      } else if(n.resolucao.tipo==='desconto'){
+        resolDetalhe=(n.resolucao.qtdPedidos||'')+'x pedidos de R$ '+(n.resolucao.valorPedido||'');
+        if(n.resolucao.refPedido)resolDetalhe+=' | Ref: '+n.resolucao.refPedido;
+      } else if(n.resolucao.tipo==='negociacao'){
+        resolDetalhe='Contato: '+(n.resolucao.negocContato||'')+(n.resolucao.negocCanal?' via '+n.resolucao.negocCanal:'');
+        if(n.resolucao.negocDiscutido)resolDetalhe+=' | '+n.resolucao.negocDiscutido;
+      }
+    }
+
+    linhas.push([
+      n.numero,
+      nomeLoja,
+      cnpjLoja,
+      dataEmissao,
+      n.marca||'',
+      n.pares||0,
+      valor,
+      status,
+      dataColeta,
+      n.transportadora||'',
+      resolTipo,
+      resolDetalhe
+    ]);
+  });
+
+  // BOM para Excel reconhecer UTF-8 com acentos
+  var csv='\uFEFF'+linhas.map(function(row){
+    return row.map(function(cell){
+      var s=String(cell||'');
+      // Escapa aspas e envolve em aspas se tiver vírgula, quebra de linha ou aspas
+      if(s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0){
+        s='"'+s.replace(/"/g,'""')+'"';
+      }
+      return s;
+    }).join(';'); // Ponto-e-vírgula para Excel BR
+  }).join('\r\n');
+
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var hoje=new Date();
+  var d=hoje.getDate().toString().padStart(2,'0')+'_'+(hoje.getMonth()+1).toString().padStart(2,'0')+'_'+hoje.getFullYear();
+  a.href=url;
+  a.download='ShoeMix_NFs_'+(tabNomes[currentTab]||currentTab)+'_'+d+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📊 Excel exportado — '+notasOrdenadas.length+' NFs ('+( tabNomes[currentTab]||'Todas')+')');
+}
+
+function exportJSON(){
+  var data={version:1,exportedAt:new Date().toISOString(),lojas:lojas,notas:notas};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='shoemix-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+  localStorage.setItem(BACKUP_KEY,Date.now().toString());
+  localStorage.removeItem(BACKUP_SNOOZE_KEY);
+  document.getElementById('backupBanner').style.display='none';
+  showToast('✅ Backup exportado com sucesso!');
+}
+// Import JSON
+function importJSON(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      if(!data.notas&&!data.lojas){alert('❌ Arquivo JSON inválido. Certifique-se de usar um backup do ShoeMix.');return}
+      var newLojas=data.lojas||[];
+      var newNotas=data.notas||[];
+      // Remove demo data (CNPJs fictícios da instalação)
+      var demoCNPJs=['12.345.678/0001-90','12.345.678/0002-71'];
+      var demoLojaIds=newLojas.filter(function(l){return demoCNPJs.indexOf(l.cnpj)>=0}).map(function(l){return l.id});
+      newLojas=newLojas.filter(function(l){return demoCNPJs.indexOf(l.cnpj)<0});
+      newNotas=newNotas.filter(function(n){return demoLojaIds.indexOf(n.lojaId)<0});
+      if(!confirm('Importar arquivo:\n\n📋 '+newNotas.length+' Notas Fiscais\n🏪 '+newLojas.length+' Lojas\n\nISso vai SUBSTITUIR todos os dados atuais.\n\nContinuar?'))return;
+      lojas=newLojas;
+      notas=newNotas;
+      localStorage.removeItem('notas_nf');
+      localStorage.removeItem('lojas_rede');
+      persist();populateLojasSelect();renderTable();updateStats();populateMarcasDatalist();
+      if(document.getElementById('page-lojas').classList.contains('active'))renderLojas();
+      showToast('✅ Importado! '+lojas.length+' lojas e '+notas.length+' NFs carregados.');
+    }catch(err){alert('❌ Erro ao ler o arquivo: '+err.message)}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+// Toast notification
+function showToast(msg){
+  var t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1f2e;border:1px solid var(--green);color:var(--green);padding:12px 24px;border-radius:10px;font-family:Syne,sans-serif;font-weight:600;font-size:14px;z-index:9999;transition:opacity .4s;white-space:nowrap';document.body.appendChild(t)}
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._timer);t._timer=setTimeout(function(){t.style.opacity='0'},2500);
+}
+var _tableVisible=true;
+function toggleTable(){
+  _tableVisible=!_tableVisible;
+  document.getElementById('tableSection').classList.toggle('hidden',!_tableVisible);
+  var arr=document.getElementById('tabToggleArrow');
+  if(arr)arr.textContent=_tableVisible?'▲':'▼';
+}
+
+// Performance: debounce busca, rAF para nao bloquear UI no mobile
+var _dbTimer=null,_dbLojaTimer=null;
+function debounceRender(){clearTimeout(_dbTimer);_dbTimer=setTimeout(renderTable,280)}
+function debounceRenderLojas(){clearTimeout(_dbLojaTimer);_dbLojaTimer=setTimeout(renderLojas,280)}
+
+var SL={'emitida':'Emitida','aguardando-coleta':'Aguard. Coleta','coletada':'Coletada','nao-coletada':'Não Coletada','cancelada':'Cancelada'};
+
+function maskCNPJ(el){var v=el.value.replace(/\D/g,'').slice(0,14);v=v.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2');el.value=v}
+function maskCEP(el){var v=el.value.replace(/\D/g,'').slice(0,8);el.value=v.length>5?v.slice(0,5)+'-'+v.slice(5):v}
+function maskFone(el){var v=el.value.replace(/\D/g,'').slice(0,11);if(v.length<=10)v=v.replace(/^(\d{2})(\d{4})(\d)/,'($1) $2-$3');else v=v.replace(/^(\d{2})(\d{5})(\d)/,'($1) $2-$3');el.value=v}
+async function buscaCEP(){var cep=document.getElementById('lCEP').value.replace(/\D/g,'');if(cep.length!==8)return;try{var r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');var d=await r.json();if(!d.erro){document.getElementById('lLogradouro').value=d.logradouro||'';document.getElementById('lBairro').value=d.bairro||'';document.getElementById('lCidade').value=d.localidade||'';document.getElementById('lUF').value=d.uf||''}}catch(e){}}
+
+function setPage(p){
+  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active')});
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.toggle('active',b.getAttribute('onclick').includes("'"+p+"'"))});
+  if(p==='lojas')renderLojas();
+  if(p==='resumo')renderResumo();
+}
+
+function updateStats(){
+  var cnt=function(s){return notas.filter(function(n){return n.status===s}).length};
+  document.getElementById('statTotal').textContent=notas.length;
+  document.getElementById('statEmitida').textContent=cnt('emitida');
+  document.getElementById('statAguardando').textContent=cnt('aguardando-coleta');
+  document.getElementById('statColetada').textContent=cnt('coletada');
+  document.getElementById('statNaoColetada').textContent=cnt('nao-coletada');
+  document.getElementById('statCancelada').textContent=cnt('cancelada');
+  var negociando=notas.filter(function(n){return n.resolucao&&n.resolucao.tipo==='negociacao'}).length;
+  var elNeg=document.getElementById('statNegociacao');
+  elNeg.textContent=negociando;
+  elNeg.style.color=negociando>0?'#f97316':'var(--text2)';
+  var resolvidas=notas.filter(function(n){return n.resolucao&&n.resolucao.tipo!=='negociacao'}).length;
+  var pctRes=notas.length>0?Math.round(resolvidas/notas.length*100):0;
+  var elRes=document.getElementById('statResolvida');
+  elRes.textContent=resolvidas+' ('+pctRes+'%)';
+  elRes.style.color=pctRes===100?'var(--green)':pctRes>=50?'var(--yellow)':'#a78bfa';
+  document.getElementById('hLojas').textContent=lojas.filter(function(l){return l.status==='ativa'}).length;
+  document.getElementById('hTotal').textContent=notas.length;
+  document.getElementById('hValor').textContent=fmtMoney(notas.reduce(function(a,n){return a+n.valor},0));
+  var al=getAlertNotas();
+  var alAg=getAlertAguardando();
+  document.getElementById('hAlertas').textContent=al.length;
+  var elAg=document.getElementById('hAguardando');
+  elAg.textContent=alAg.length;
+  elAg.style.color=alAg.length>0?'#f97316':'var(--text2)';
+  renderAlerts(al);
+}
+
+function getAlertNotas(){return notas.filter(function(n){return n.status==='coletada'&&!n.resolucao&&daysDiff(n.dataColeta)>=30})}
+function getAlertAguardando(){return notas.filter(function(n){return n.status==='aguardando-coleta'&&daysDiff(n.dataEmissao)>=10})}
+
+function renderAlerts(alertas){
+  var sec=document.getElementById('alertsSection');
+  var alertsAguard=getAlertAguardando();
+  if(!alertas.length&&!alertsAguard.length){sec.innerHTML='';return}
+
+  function buildCard(n,tipo){
+    if(tipo==='cobranca'){
+      var dias=daysDiff(n.dataColeta);
+      var loja=lojas.find(function(l){return l.id===n.lojaId});
+      var nome=loja?'['+loja.numero+'] '+(loja.nomeFantasia||loja.nome):n.lojaId;
+      return '<div class="alert-card"><div class="alert-icon">🔔</div><div class="alert-text"><strong>COBRANÇA — NF '+n.numero+' · '+nome+'</strong><p>Coletada em '+fmtDate(n.dataColeta)+' · Valor: '+fmtMoney(n.valor)+' · <strong>'+dias+' dias</strong> desde a coleta</p></div><span class="alert-days">'+dias+'d</span><button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="openCobranca(\''+n.id+'\')">Registrar</button></div>';
+    } else {
+      var dias=daysDiff(n.dataEmissao);
+      var loja=lojas.find(function(l){return l.id===n.lojaId});
+      var nome=loja?'['+loja.numero+'] '+(loja.nomeFantasia||loja.nome):n.lojaId;
+      var temContato=n.contatosColeta&&n.contatosColeta.length;
+      return '<div class="alert-card" style="border-color:#f97316;background:linear-gradient(135deg,#2a1200,#1a0e00)"><div class="alert-icon">🚚</div><div class="alert-text"><strong style="color:#f97316">COLETA PENDENTE — NF '+n.numero+' · '+nome+'</strong><p>Emitida em '+fmtDate(n.dataEmissao)+' · Valor: '+fmtMoney(n.valor)+' · <strong style="color:#f97316">'+dias+' dias</strong> aguardando coleta'+(temContato?' · <span style="color:var(--green)">📞 '+n.contatosColeta.length+' contato'+(n.contatosColeta.length>1?'s':'')+'</span>':'')+'</p></div><span class="alert-days" style="background:#f97316">'+dias+'d</span><button class="btn btn-sm" title="'+(temContato?'Ver contatos':'Registrar contato')+'" style="margin-left:8px;background:'+(temContato?'rgba(34,197,94,.15);color:var(--green);border:1px solid var(--green)':'rgba(249,115,22,.2);color:#f97316;border:1px solid #f97316')+'" onclick="openContatoColeta(\''+n.id+'\')">📞</button><button class="btn btn-sm" style="margin-left:4px;background:#f97316;color:#fff" onclick="editNF(\''+n.id+'\')">Atualizar</button></div>';
+    }
+  }
+
+  function buildSection(lista,tipo,titulo,cor){
+    if(!lista.length)return '';
+    var altura=lista.length<=4?'auto':'320px';
+    var html='<div style="margin-bottom:20px">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+    html+='<span style="font-family:Syne,sans-serif;font-weight:700;font-size:12px;color:'+cor+';letter-spacing:.6px;text-transform:uppercase">'+titulo+'</span>';
+    html+='<span style="background:'+cor+';color:#000;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700">'+lista.length+'</span>';
+    html+='</div>';
+    html+='<div style="max-height:'+altura+';overflow-y:auto;padding-right:2px;scrollbar-width:thin;scrollbar-color:'+cor+' transparent">';
+    lista.forEach(function(n){html+=buildCard(n,tipo)});
+    html+='</div></div>';
+    return html;
+  }
+
+  sec.innerHTML=
+    buildSection(alertas,'cobranca','🔔 Cobranças Pendentes','var(--accent)')+
+    buildSection(alertsAguard,'aguardando','🚚 Coletas Pendentes','#f97316');
+}
+
+function toggleAlertScroll(sid){
+  var el=document.getElementById(sid);
+  var btn=document.getElementById('btn_'+sid);
+  if(!el)return;
+  var open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(btn)btn.textContent=open?'▼ ver mais':'▲ recolher';
+}
+
+function populateMarcasDatalist(){var marcas=[...new Set(notas.map(function(n){return n.marca||''}).filter(Boolean))].sort();var dl=document.getElementById('marcasList');if(dl)dl.innerHTML=marcas.map(function(m){return'<option value="'+m+'">'}).join('');}
+
+function populateLojasSelect(selId){
+  var ativas=lojas.filter(function(l){return l.status==='ativa'}).sort(function(a,b){return a.numero.localeCompare(b.numero,undefined,{numeric:true})});
+  var sel=document.getElementById('fLoja');
+  sel.innerHTML='<option value="">Selecione a loja...</option>'+ativas.map(function(l){return'<option value="'+l.id+'"'+(l.id===selId?' selected':'')+'>['+l.numero+'] '+(l.nomeFantasia||l.nome)+'</option>'}).join('');
+  var fl=document.getElementById('filterLoja');var cur=fl.value;
+  fl.innerHTML='<option value="">Todas as Lojas</option>'+ativas.map(function(l){return'<option value="'+l.id+'"'+(l.id===cur?' selected':'')+'>['+l.numero+'] '+(l.nomeFantasia||l.nome)+'</option>'}).join('');
+}
+
+function setTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(function(t){
+    var oc=t.getAttribute('onclick')||'';
+    t.classList.toggle('active',oc.indexOf("'"+tab+"'")>=0);
+  });
+  renderTable();
+}
+
+function renderTable(){
+  var search=document.getElementById('searchInput').value.toLowerCase();
+  var fLojaId=document.getElementById('filterLoja').value;
+  var alertIds=getAlertNotas().map(function(n){return n.id});
+  var alertAguardIds=getAlertAguardando().map(function(n){return n.id});
+  var filtered=notas.filter(function(n){
+    if(currentTab==='cobranca')return alertIds.includes(n.id);
+    if(currentTab==='coleta-pendente')return alertAguardIds.includes(n.id);
+    if(currentTab==='resolvidas')return !!(n.resolucao&&n.resolucao.tipo!=='negociacao');
+    if(currentTab!=='todas'&&n.status!==currentTab)return false;
+    if(fLojaId&&n.lojaId!==fLojaId)return false;
+    if(search){var loja=lojas.find(function(l){return l.id===n.lojaId});var nL=loja?[loja.numero,loja.nome,loja.nomeFantasia||''].join(' ').toLowerCase():'';if(![nL,n.numero,n.status,n.marca||''].join(' ').toLowerCase().includes(search))return false}
+    return true;
+  }).sort(function(a,b){return new Date(b.dataEmissao)-new Date(a.dataEmissao)});
+
+  var tbody=document.getElementById('tableBody');
+  var empty=document.getElementById('emptyState');
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';updateStats();return}
+  empty.style.display='none';
+
+  tbody.innerHTML=filtered.map(function(n){
+    var loja=lojas.find(function(l){return l.id===n.lojaId});
+    var nomeExib=loja?'<div class="td-nome">['+loja.numero+'] '+(loja.nomeFantasia||loja.nome)+'</div><div class="td-cnpj">'+(loja.cnpj||'')+'</div>':'<div class="td-nome">'+n.lojaId+'</div>';
+    var marcaCell=n.marca?'<span class="td-marca">'+n.marca+'</span>':'<span style="color:var(--text2);font-size:11px">—</span>';
+    var dias=daysDiff(n.dataColeta);
+    var isAlert=alertIds.includes(n.id);
+    var isAguardAlert=alertAguardIds.includes(n.id);
+    var alertStr=isAlert?'<div class="alerta-30">⚠ '+dias+'d</div>':(isAguardAlert?'<div class="alerta-coleta">🚚 '+daysDiff(n.dataEmissao)+'d</div>':'');
+    var resolStr='<span class="resolucao-badge pendente">—</span>';
+    if(n.resolucao){
+      var _rt=n.resolucao.tipo;
+      var rLabel=_rt==='abatimento'?'📄 '+n.resolucao.qtdBoletos+'x boleto':_rt==='desconto'?'🛒 Desc. Pedido':_rt==='negociacao'?'🤝 Em Negociação':'🏦 Depósito';
+      var rClass=_rt==='abatimento'?'abatimento':_rt==='desconto'?'desconto':_rt==='negociacao'?'negociacao':'deposito';
+      resolStr='<div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap"><span class="resolucao-badge '+rClass+'">'+rLabel+'</span><button class="btn btn-ghost btn-sm" style="padding:2px 5px;font-size:11px;flex-shrink:0" onclick="openCobranca(\''+n.id+'\')" title="Editar resolução">✏️</button><button class="btn btn-danger btn-sm" style="padding:2px 5px;font-size:11px;flex-shrink:0" onclick="deleteResolucao(\''+n.id+'\')" title="Excluir resolução">🗑</button></div>'
+    }
+    return'<tr><td>'+nomeExib+'</td><td class="col-marca">'+marcaCell+'</td><td class="td-nf">'+n.numero+'</td><td class="col-emissao">'+fmtDate(n.dataEmissao)+'</td><td class="col-pares">'+n.pares+' par'+(n.pares!=1?'es':'')+'</td><td class="valor-cell col-valor">'+fmtMoney(n.valor)+'</td><td><span class="badge badge-'+n.status+'">'+(SL[n.status]||n.status)+'</span></td><td class="col-coleta">'+(n.dataColeta?'<div>'+fmtDate(n.dataColeta)+'</div>':'<span style="color:var(--text2)">—</span>')+alertStr+(n.contatosColeta&&n.contatosColeta.length?'<div style="font-size:10px;color:var(--green);margin-top:2px">📞 '+n.contatosColeta.length+' contato'+(n.contatosColeta.length>1?'s':'')+'</div>':'')+'</td><td class="col-resolucao">'+resolStr+'</td><td class="actions-cell"><button class="btn btn-ghost btn-sm" onclick="editNF(\''+n.id+'\')">✏️</button>'+(n.status==='aguardando-coleta'?'<button class="btn btn-sm" onclick="openContatoColeta(\''+n.id+'\')" title="'+(n.contatosColeta&&n.contatosColeta.length?'Ver contatos ('+n.contatosColeta.length+')':'Registrar contato de coleta')+'" style="background:'+(n.contatosColeta&&n.contatosColeta.length?'rgba(34,197,94,.15);color:var(--green);border:1px solid var(--green)':'rgba(249,115,22,.15);color:#f97316;border:1px solid #f97316')+'">📞</button>':'')+(isAlert&&!n.resolucao?'<button class="btn btn-primary btn-sm" onclick="openCobranca(\''+n.id+'\')">🔔</button>':'')+'<button class="btn btn-danger btn-sm" onclick="deleteNF(\''+n.id+'\')">🗑</button></td></tr>'
+  }).join('');
+  updateStats();populateLojasSelect();
+}
+
+function openModalNF(){
+  editingNFId=null;
+  document.getElementById('modalTitle').textContent='Nova Nota Fiscal';
+  resetNfUpload();
+  ['fNumero','fDataColeta','fTransportadora','fObsColeta','fDefeito','fMarca'].forEach(function(id){document.getElementById(id).value=''});
+  document.getElementById('fDataEmissao').value=today();
+  document.getElementById('fPares').value='';
+  document.getElementById('fValor').value='';
+  document.getElementById('fStatus').value='';
+  document.getElementById('sectionColeta').classList.remove('visible');
+  populateLojasSelect();
+  document.getElementById('modalNF').classList.add('open');
+}
+var _savedOk=false;
+function closeModalNF(){
+  // Only save draft if closed manually (not after a successful save)
+  if(!_savedOk){
+    var loja=document.getElementById('fLoja').value;
+    var num=document.getElementById('fNumero').value.trim();
+    if(loja||num){
+      saveDraft('nf',{
+        lojaId:loja,numero:num,
+        dataEmissao:document.getElementById('fDataEmissao').value,
+        pares:document.getElementById('fPares').value,
+        valor:document.getElementById('fValor').value,
+        status:document.getElementById('fStatus').value,
+        dataColeta:document.getElementById('fDataColeta').value,
+        transportadora:document.getElementById('fTransportadora').value,
+        obsColeta:document.getElementById('fObsColeta').value,
+        defeito:document.getElementById('fDefeito').value
+      });
+      checkDraft();
+    }
+  }
+  _savedOk=false;
+  document.getElementById('nfUploadArea').style.display='block';
+  document.getElementById('modalNF').classList.remove('open');
+}
+function onStatusChange(){
+  var s=document.getElementById('fStatus').value;
+  var show=s==='coletada'||s==='nao-coletada';
+  document.getElementById('sectionColeta').classList.toggle('visible',show);
+  if(!show){
+    document.getElementById('fDataColeta').value='';
+    document.getElementById('fTransportadora').value='';
+    document.getElementById('fObsColeta').value='';
+  }
+}
+
+function editNF(id){
+  var n=notas.find(function(x){return x.id===id});if(!n)return;
+  _savedOk=true;
+  document.getElementById('nfUploadArea').style.display='none';
+  document.getElementById('nfIaStatus').style.display='none';
+  editingNFId=id;document.getElementById('modalTitle').textContent='Editar Nota Fiscal';
+  populateLojasSelect(n.lojaId);
+  document.getElementById('fNumero').value=n.numero;document.getElementById('fDataEmissao').value=n.dataEmissao;document.getElementById('fPares').value=n.pares;document.getElementById('fValor').value=n.valor.toFixed(2).replace('.',',');document.getElementById('fStatus').value=n.status;document.getElementById('fDataColeta').value=n.dataColeta||'';document.getElementById('fTransportadora').value=n.transportadora||'';document.getElementById('fObsColeta').value=n.obsColeta||'';document.getElementById('fDefeito').value=n.defeito||'';document.getElementById('fMarca').value=n.marca||'';
+  onStatusChange();document.getElementById('modalNF').classList.add('open');
+}
+function saveNF(){
+  var lojaId=document.getElementById('fLoja').value,numero=document.getElementById('fNumero').value.trim(),dataEmissao=document.getElementById('fDataEmissao').value,pares=parseInt(document.getElementById('fPares').value)||0,valor=parseValor(document.getElementById('fValor').value),status=document.getElementById('fStatus').value;
+  if(!lojaId||!numero||!dataEmissao||!pares||!valor||!status){alert('⚠️ Preencha todos os campos obrigatórios (*)');return}
+  var old=editingNFId?notas.find(function(x){return x.id===editingNFId}):null;
+  var obj={id:editingNFId||uid(),lojaId:lojaId,numero:numero,dataEmissao:dataEmissao,pares:pares,valor:valor,status:status,dataColeta:document.getElementById('fDataColeta').value||null,transportadora:document.getElementById('fTransportadora').value.trim(),obsColeta:document.getElementById('fObsColeta').value.trim(),defeito:document.getElementById('fDefeito').value.trim(),marca:(document.getElementById('fMarca').value||'').trim(),resolucao:old?old.resolucao||null:null,createdAt:old?old.createdAt:new Date().toISOString()};
+  notas=editingNFId?notas.map(function(n){return n.id===editingNFId?obj:n}):[...notas,obj];
+  clearDraft();_savedOk=true;persist();closeModalNF();renderTable();populateMarcasDatalist();
+}
+function deleteNF(id){var n=notas.find(function(x){return x.id===id});if(!n)return;if(!confirm('Excluir NF '+n.numero+'?'))return;notas=notas.filter(function(x){return x.id!==id});persist();renderTable();updateStats();}
+
+function openModalLoja(){
+  editingLojaId=null;document.getElementById('lojaModalTitle').textContent='Cadastrar Loja';
+  ['lNumero','lNome','lFantasia','lCNPJ','lIE','lCEP','lLogradouro','lNumEnd','lComplemento','lBairro','lCidade','lTelefone','lWhatsapp','lEmail','lResponsavel','lObs'].forEach(function(id){document.getElementById(id).value=''});
+  document.getElementById('lUF').value='';document.getElementById('lStatus').value='ativa';
+  document.getElementById('modalLoja').classList.add('open');
+}
+var _savedLojaOk=false;
+function closeModalLoja(){
+  if(!_savedLojaOk){
+    var num=document.getElementById('lNumero').value.trim();
+    var nome=document.getElementById('lNome').value.trim();
+    if(num||nome){
+      saveDraft('loja',{
+        numero:num,nome:nome,
+        nomeFantasia:document.getElementById('lFantasia').value,
+        cnpj:document.getElementById('lCNPJ').value,
+        ie:document.getElementById('lIE').value,
+        cep:document.getElementById('lCEP').value,
+        logradouro:document.getElementById('lLogradouro').value,
+        numEnd:document.getElementById('lNumEnd').value,
+        complemento:document.getElementById('lComplemento').value,
+        bairro:document.getElementById('lBairro').value,
+        cidade:document.getElementById('lCidade').value,
+        uf:document.getElementById('lUF').value,
+        telefone:document.getElementById('lTelefone').value,
+        whatsapp:document.getElementById('lWhatsapp').value,
+        email:document.getElementById('lEmail').value,
+        responsavel:document.getElementById('lResponsavel').value,
+        obs:document.getElementById('lObs').value,
+        status:document.getElementById('lStatus').value
+      });
+      checkDraft();
+    }
+  }
+  _savedLojaOk=false;
+  document.getElementById('modalLoja').classList.remove('open');
+}
+
+function editLoja(id){
+  var l=lojas.find(function(x){return x.id===id});if(!l)return;
+  _savedLojaOk=true;
+  editingLojaId=id;document.getElementById('lojaModalTitle').textContent='Editar Loja';
+  document.getElementById('lNumero').value=l.numero||'';document.getElementById('lNome').value=l.nome||'';document.getElementById('lFantasia').value=l.nomeFantasia||'';document.getElementById('lCNPJ').value=l.cnpj||'';document.getElementById('lIE').value=l.ie||'';document.getElementById('lCEP').value=l.cep||'';document.getElementById('lLogradouro').value=l.logradouro||'';document.getElementById('lNumEnd').value=l.numEnd||'';document.getElementById('lComplemento').value=l.complemento||'';document.getElementById('lBairro').value=l.bairro||'';document.getElementById('lCidade').value=l.cidade||'';document.getElementById('lUF').value=l.uf||'';document.getElementById('lTelefone').value=l.telefone||'';document.getElementById('lWhatsapp').value=l.whatsapp||'';document.getElementById('lEmail').value=l.email||'';document.getElementById('lResponsavel').value=l.responsavel||'';document.getElementById('lObs').value=l.obs||'';document.getElementById('lStatus').value=l.status||'ativa';
+  document.getElementById('modalLoja').classList.add('open');
+}
+function saveLoja(){
+  var numero=document.getElementById('lNumero').value.trim(),nome=document.getElementById('lNome').value.trim();
+  if(!numero||!nome){alert('⚠️ Número e Razão Social são obrigatórios');return}
+  var old=editingLojaId?lojas.find(function(x){return x.id===editingLojaId}):null;
+  var obj={id:editingLojaId||uid(),numero:numero,nome:nome,nomeFantasia:document.getElementById('lFantasia').value.trim(),cnpj:document.getElementById('lCNPJ').value.trim(),ie:document.getElementById('lIE').value.trim(),cep:document.getElementById('lCEP').value.trim(),logradouro:document.getElementById('lLogradouro').value.trim(),numEnd:document.getElementById('lNumEnd').value.trim(),complemento:document.getElementById('lComplemento').value.trim(),bairro:document.getElementById('lBairro').value.trim(),cidade:document.getElementById('lCidade').value.trim(),uf:document.getElementById('lUF').value,telefone:document.getElementById('lTelefone').value.trim(),whatsapp:document.getElementById('lWhatsapp').value.trim(),email:document.getElementById('lEmail').value.trim(),responsavel:document.getElementById('lResponsavel').value.trim(),obs:document.getElementById('lObs').value.trim(),status:document.getElementById('lStatus').value,createdAt:old?old.createdAt:new Date().toISOString()};
+  lojas=editingLojaId?lojas.map(function(l){return l.id===editingLojaId?obj:l}):[...lojas,obj];
+  clearDraft();_savedLojaOk=true;persist();closeModalLoja();renderLojas();updateStats();populateLojasSelect();
+}
+function deleteLoja(id){
+  var l=lojas.find(function(x){return x.id===id});if(!l)return;
+  var nfsL=notas.filter(function(n){return n.lojaId===id}).length;
+  if(nfsL>0&&!confirm('Esta loja possui '+nfsL+' NF(s). Excluir mesmo assim?'))return;
+  if(!confirm('Excluir loja '+l.numero+' — '+l.nome+'?'))return;
+  lojas=lojas.filter(function(x){return x.id!==id});
+  persist();renderLojas();updateStats();populateLojasSelect();
+}
+
+function renderLojas(){
+  var search=document.getElementById('searchLoja').value.toLowerCase();
+  var fSt=document.getElementById('filterStatusLoja').value;
+  var filtered=lojas.filter(function(l){
+    if(fSt&&l.status!==fSt)return false;
+    if(search){var hay=[l.numero,l.nome,l.nomeFantasia||'',l.cnpj||'',l.cidade||'',l.uf||'',l.responsavel||''].join(' ').toLowerCase();if(!hay.includes(search))return false}
+    return true;
+  }).sort(function(a,b){return a.numero.localeCompare(b.numero,undefined,{numeric:true})});
+
+  var grid=document.getElementById('lojasGrid');
+  var empty=document.getElementById('lojasEmpty');
+  var count=document.getElementById('lojasCount');
+  var ativas=lojas.filter(function(l){return l.status==='ativa'}).length;
+  count.textContent=lojas.length+' loja'+(lojas.length!==1?'s':'')+' cadastrada'+(lojas.length!==1?'s':'')+' · '+ativas+' ativa'+(ativas!==1?'s':'');
+  if(!filtered.length){grid.innerHTML='';empty.style.display='block';return}
+  empty.style.display='none';
+
+  grid.innerHTML=filtered.map(function(l){
+    var nfsL=notas.filter(function(n){return n.lojaId===l.id}).length;
+    var end=[l.logradouro,l.numEnd?'nº '+l.numEnd:'',l.complemento,l.bairro].filter(Boolean).join(', ');
+    var cidUF=[l.cidade,l.uf].filter(Boolean).join(' - ');
+    return '<div class="loja-card">'+(nfsL>0?'<div class="loja-nf-count">📋 '+nfsL+' NF'+(nfsL!==1?'s':'')+'</div>':'')+
+    '<div class="loja-card-header"><div class="loja-numero">'+l.numero+'</div><div class="loja-card-info"><div class="loja-card-nome">'+(l.nomeFantasia||l.nome)+'</div>'+(l.nomeFantasia?'<div style="font-size:11px;color:var(--text2);margin-top:2px">'+l.nome+'</div>':'')+'</div></div>'+
+    '<div style="margin-bottom:12px"><span class="badge badge-'+l.status+'">'+(l.status==='ativa'?'Ativa':'Inativa')+'</span></div>'+
+    (l.cnpj?'<div class="loja-detail-row"><span class="icon">🧾</span><span class="val"><strong>CNPJ:</strong> '+l.cnpj+'</span></div>':'')+
+    (l.ie?'<div class="loja-detail-row"><span class="icon">📋</span><span class="val"><strong>IE:</strong> '+l.ie+'</span></div>':'')+
+    (end?'<div class="loja-detail-row"><span class="icon">📍</span><span class="val">'+end+(cidUF?', '+cidUF:'')+(l.cep?' — CEP '+l.cep:'')+'</span></div>':'')+
+    (l.telefone?'<div class="loja-detail-row"><span class="icon">📞</span><span class="val">'+l.telefone+(l.whatsapp&&l.whatsapp!==l.telefone?' · WhatsApp: '+l.whatsapp:'')+'</span></div>':'')+
+    (l.email?'<div class="loja-detail-row"><span class="icon">✉️</span><span class="val">'+l.email+'</span></div>':'')+
+    (l.responsavel?'<div class="loja-detail-row"><span class="icon">👤</span><span class="val">'+l.responsavel+'</span></div>':'')+
+    '<div style="display:flex;gap:8px;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">'+
+    '<button class="btn btn-ghost btn-sm" onclick="editLoja(\''+l.id+'\')">✏️ Editar</button>'+
+    (nfsL>0?'<button class="btn btn-blue btn-sm" onclick="verNFsLoja(\''+l.id+'\')">📋 Ver NFs</button>':'')+
+    '<button class="btn btn-danger btn-sm" onclick="deleteLoja(\''+l.id+'\')">🗑</button></div></div>'
+  }).join('');
+}
+
+function verNFsLoja(lojaId){
+  document.getElementById('filterLoja').value=lojaId;
+  currentTab='todas';
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.getAttribute('onclick').includes("'todas'"))});
+  setPage('notas');renderTable();
+}
+
+function openCobranca(id){
+  cobrancaId=id;var n=notas.find(function(x){return x.id===id});if(!n)return;
+  var loja=lojas.find(function(l){return l.id===n.lojaId});
+  var nomeL=loja?'['+loja.numero+'] '+(loja.nomeFantasia||loja.nome):'—';
+  selectedOpcao=null;uploadedFileData=null;
+  document.getElementById('fileInput').value='';document.getElementById('uploadName').style.display='none';document.getElementById('uploadArea').classList.remove('has-file');
+  ['fQtdBoletos','fValorBoleto','fObsAbatimento','fObsDeposito'].forEach(function(id){document.getElementById(id).value=''});document.getElementById('fDataDeposito').value='';
+  ['opt-negociacao','opt-abatimento','opt-deposito','opt-desconto'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('selected')});
+  ['sub-negociacao','sub-abatimento','sub-deposito','sub-desconto'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('visible')});
+  // Se já tem resolução, pré-preencher para edição
+  var isEdit=!!(n.resolucao);
+  var isNegoc=isEdit&&n.resolucao.tipo==='negociacao';
+  document.getElementById('modalCobranca').querySelector('.modal-title').textContent=isNegoc?'🤝 Editar Negociação':isEdit?'✏️ Editar Resolução':'⚠️ Registrar / Negociar';
+  document.getElementById('modalCobranca').querySelector('.btn-primary').textContent=isEdit?'💾 Atualizar Resolução':'✅ Confirmar Resolução';
+  if(isEdit){
+    var r=n.resolucao;
+    selectOpcao(r.tipo);
+    if(r.tipo==='abatimento'){
+      document.getElementById('fQtdBoletos').value=r.qtdBoletos||'';
+      document.getElementById('fValorBoleto').value=r.valorBoleto?r.valorBoleto.toFixed(2).replace('.',','):'';
+      document.getElementById('fObsAbatimento').value=r.obs||'';
+    } else if(r.tipo==='deposito') {
+      document.getElementById('fDataDeposito').value=r.dataDeposito||'';
+      document.getElementById('fObsDeposito').value=r.obs||'';
+      if(r.comprovante){uploadedFileData=r.comprovante;document.getElementById('uploadName').textContent='✅ '+r.comprovante.name;document.getElementById('uploadName').style.display='block';document.getElementById('uploadArea').classList.add('has-file');}
+    } else if(r.tipo==='negociacao') {
+      document.getElementById('fNegocData').value=r.negocData||'';
+      document.getElementById('fNegocContato').value=r.negocContato||'';
+      document.getElementById('fNegocCanal').value=r.negocCanal||'';
+      document.getElementById('fNegocProximo').value=r.negocProximo||'';
+      document.getElementById('fNegocDiscutido').value=r.negocDiscutido||'';
+      document.getElementById('fNegocPendencia').value=r.negocPendencia||'';
+    } else if(r.tipo==='desconto') {
+      document.getElementById('fQtdPedidos').value=r.qtdPedidos||'';
+      document.getElementById('fValorPedido').value=r.valorPedido?r.valorPedido.toFixed(2).replace('.',','):'';
+      document.getElementById('fRefPedido').value=r.refPedido||'';
+      document.getElementById('fPrevPedido').value=r.prevPedido||'';
+      document.getElementById('fObsDesconto').value=r.obs||'';
+    }
+  }
+  document.getElementById('cobrancaSubtitle').textContent='NF '+n.numero+' · '+nomeL+' · '+fmtMoney(n.valor);
+  document.getElementById('cobrancaInfo').innerHTML='<div class="detail-row"><span class="detail-key">Loja</span><span class="detail-val">'+nomeL+'</span></div>'+(loja&&loja.cnpj?'<div class="detail-row"><span class="detail-key">CNPJ</span><span class="detail-val" style="font-family:monospace">'+loja.cnpj+'</span></div>':'')+'<div class="detail-row"><span class="detail-key">Número NF</span><span class="detail-val" style="color:var(--accent)">'+n.numero+'</span></div>'+(n.marca?'<div class="detail-row"><span class="detail-key">Marca</span><span class="detail-val" style="color:#a78bfa;font-family:Syne,sans-serif;font-weight:700">'+n.marca+'</span></div>':'')+'<div class="detail-row"><span class="detail-key">Valor Líquido</span><span class="detail-val" style="color:var(--green)">'+fmtMoney(n.valor)+'</span></div><div class="detail-row"><span class="detail-key">Data Coleta</span><span class="detail-val">'+fmtDate(n.dataColeta)+'</span></div><div class="detail-row"><span class="detail-key">Dias desde coleta</span><span class="detail-val" style="color:var(--accent)">'+daysDiff(n.dataColeta)+' dias</span></div>';
+  document.getElementById('modalCobranca').classList.add('open');
+}
+function closeCobranca(){document.getElementById('modalCobranca').classList.remove('open')}
+function deleteResolucao(id){
+  var n=notas.find(function(x){return x.id===id});if(!n||!n.resolucao)return;
+  if(!confirm('Excluir a resolução da NF '+n.numero+'?\n\nA nota voltará a aparecer como pendente.'))return;
+  n.resolucao=null;persist();renderTable();
+  showToast('🗑 Resolução removida — NF '+n.numero);
+}
+function selectOpcao(tipo){selectedOpcao=tipo;['negociacao','abatimento','deposito','desconto'].forEach(function(t){var el=document.getElementById('opt-'+t);if(el)el.classList.toggle('selected',t===tipo);var sub=document.getElementById('sub-'+t);if(sub)sub.classList.toggle('visible',t===tipo);})}
+function handleFile(input){var file=input.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){uploadedFileData={name:file.name,data:e.target.result,type:file.type};document.getElementById('uploadName').textContent='✅ '+file.name;document.getElementById('uploadName').style.display='block';document.getElementById('uploadArea').classList.add('has-file')};reader.readAsDataURL(file)}
+function saveCobranca(){
+  if(!selectedOpcao){alert('⚠️ Selecione o tipo de resolução');return}
+  var n=notas.find(function(x){return x.id===cobrancaId});if(!n)return;
+  var res={tipo:selectedOpcao,data:new Date().toISOString()};
+  if(selectedOpcao==='abatimento'){var qtd=parseInt(document.getElementById('fQtdBoletos').value)||0;if(!qtd){alert('⚠️ Informe a quantidade de boletos');return}res.qtdBoletos=qtd;res.valorBoleto=parseValor(document.getElementById('fValorBoleto').value);res.obs=document.getElementById('fObsAbatimento').value.trim()}
+  else if(selectedOpcao==='deposito'){res.dataDeposito=document.getElementById('fDataDeposito').value;res.comprovante=uploadedFileData;res.obs=document.getElementById('fObsDeposito').value.trim()}
+  else if(selectedOpcao==='negociacao'){var nd=document.getElementById('fNegocData').value;if(!nd){alert('⚠️ Informe a data do contato');return}res.negocData=nd;res.negocContato=document.getElementById('fNegocContato').value.trim();res.negocCanal=document.getElementById('fNegocCanal').value;res.negocProximo=document.getElementById('fNegocProximo').value;res.negocDiscutido=document.getElementById('fNegocDiscutido').value.trim();res.negocPendencia=document.getElementById('fNegocPendencia').value.trim();}
+  else if(selectedOpcao==='desconto'){var qtdP=parseInt(document.getElementById('fQtdPedidos').value)||0;if(!qtdP){alert('⚠️ Informe a quantidade de pedidos');return}res.qtdPedidos=qtdP;res.valorPedido=parseValor(document.getElementById('fValorPedido').value);res.refPedido=document.getElementById('fRefPedido').value.trim();res.prevPedido=document.getElementById('fPrevPedido').value;res.obs=document.getElementById('fObsDesconto').value.trim()}
+  var isEdit=!!(n.resolucao);
+  n.resolucao=res;persist();closeCobranca();renderTable();
+  showToast(isEdit?'✅ Resolução atualizada! NF '+n.numero:'✅ Resolução registrada! NF '+n.numero);
+}
+
+// ── LEITURA DE NF VIA IA ──────────────────────────────────────────────────
+async function lerNFcomIA(input){
+  var file=input.files[0];
+  if(!file)return;
+  input.value='';
+
+  var status=document.getElementById('nfIaStatus');
+  var area=document.getElementById('nfUploadArea');
+
+  function setStatus(icon,msg,cor,bg){
+    status.style.display='flex';
+    status.style.background=bg||'rgba(240,165,0,.08)';
+    status.style.border='1px solid '+(cor||'var(--accent)');
+    status.style.color=cor||'var(--accent)';
+    status.innerHTML='<span style="font-size:18px">'+icon+'</span><span>'+msg+'</span>';
+  }
+
+  setStatus('⏳','Lendo PDF... aguarde','var(--accent)','rgba(240,165,0,.08)');
+  area.style.pointerEvents='none';
+
+  try{
+    // Carregar pdf.js dinamicamente se ainda não carregado
+    if(!window.pdfjsLib){
+      await new Promise(function(res,rej){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    var arrayBuffer=await file.arrayBuffer();
+    var pdf=await window.pdfjsLib.getDocument({data:arrayBuffer}).promise;
+    var textoTotal='';
+    for(var p=1;p<=pdf.numPages;p++){
+      var page=await pdf.getPage(p);
+      var tc=await page.getTextContent();
+      textoTotal+=tc.items.map(function(i){return i.str}).join(' ')+'\n';
+    }
+
+    var campos=extrairCamposNF(textoTotal);
+    preencherFormNF(campos,file.name);
+
+  }catch(err){
+    console.error('Erro leitura PDF:',err);
+    setStatus('❌','Não foi possível ler o PDF. Verifique se é um PDF com texto (não escaneado).','var(--red)','rgba(239,68,68,.08)');
+    area.style.pointerEvents='auto';
+  }
+}
+
+function extrairCamposNF(txt){
+  var c={};
+
+  // Número da NF — padrão: Nº 000.008.091 ou NF 8091 ou Número 8091
+  var mNum=txt.match(/N[ºo°][\s.:]*(\d[\d.]{2,14})/i);
+  if(mNum)c.numero=mNum[1].replace(/\./g,'').replace(/^0+/,'').padStart(1,'0');
+
+  // Data de emissão — DD/MM/AAAA
+  var mData=txt.match(/EMISS[ÃA]O[:\s]*(\d{2})\/(\d{2})\/(\d{4})/i);
+  if(!mData)mData=txt.match(/DATA.*?(\d{2})\/(\d{2})\/(\d{4})/i);
+  if(mData)c.dataEmissao=mData[3]+'-'+mData[2]+'-'+mData[1];
+
+  // Valor total da nota
+  var mValor=txt.match(/VALOR TOTAL DA NOTA[\s:R$]*(\d[\d.,]+)/i);
+  if(!mValor)mValor=txt.match(/VALOR TOTAL[\s:R$]*(\d[\d.,]+)/i);
+  if(mValor){
+    var vs=mValor[1].replace(/\./g,'').replace(',','.');
+    c.valorTotal=parseFloat(vs);
+  }
+
+  // Quantidade de pares/unidades — padrão DANFE: UNID. seguida de quantidade decimal
+  // Aceita UN, PR, PAR, PC, PCS, CX, KG etc — ex: "PR 1,00" ou "UN 2,00"
+  var qtdTotal=0;
+  var reQtd=/\b(UN|PR|PAR|PC|PCS|CX|KG|MT|LT)\b\s+(\d{1,4})[,.](\d{2})/gi;
+  var mq;
+  while((mq=reQtd.exec(txt))!==null){
+    var q=parseInt(mq[2])||0;
+    if(q>0&&q<=9999)qtdTotal+=q;
+  }
+  // Fallback: quantidade decimal antes da unidade (ex: "1,00 PR")
+  if(qtdTotal===0){
+    var reQtd2=/(\d{1,4})[,.]00\s+(UN|PR|PAR|PC|PCS)\b/gi;
+    var mq2;
+    while((mq2=reQtd2.exec(txt))!==null){
+      var q2=parseInt(mq2[1])||0;
+      if(q2>0&&q2<=9999)qtdTotal+=q2;
+    }
+  }
+  if(qtdTotal>0)c.pares=qtdTotal;
+
+  // Marca — busca marcas conhecidas de calçados no texto todo
+  var marcasConhecidas=['CHENSON','NIKE','ADIDAS','VIZZANO','BEIRA RIO','HAVAIANAS','MOLECA','PICCADILLY','FILA','PUMA','REEBOK','AREZZO','CROCS','KOLOSH','MODARE','DAKOTA','BOTTERO','DIJEAN','VIA MARTE','CAMPESI','RAMARIM','USAFLEX','COMFORTFLEX'];
+  var marcasEncontradas=[];
+  for(var i=0;i<marcasConhecidas.length;i++){
+    if(txt.toUpperCase().indexOf(marcasConhecidas[i])>=0&&marcasEncontradas.indexOf(marcasConhecidas[i])<0){
+      marcasEncontradas.push(marcasConhecidas[i]);
+    }
+  }
+  // Ignora marca do campo MARCA da transportadora (que pode ser vazio)
+  if(marcasEncontradas.length>0)c.marca=marcasEncontradas.join(' / ');
+
+  // Defeito — mencionado nas informações complementares
+  var mDef=txt.match(/DEFEITO[:\s]+([^\n]{5,80})/i);
+  if(!mDef)mDef=txt.match(/DEVOLU[ÇC][ÃA]O[^.\n]*DEFEITO[^.\n]*/i);
+  if(mDef)c.defeito=mDef[0].trim().substring(0,120);
+
+  // CNPJs — pega todos os CNPJs do documento
+  var todosOsCnpjs=[];
+  var reCnpj=/(\d{2})[.\s]?(\d{3})[.\s]?(\d{3})[\/\s]?(\d{4})[-\s]?(\d{2})/g;
+  var mc;
+  while((mc=reCnpj.exec(txt))!==null){
+    todosOsCnpjs.push(mc[1]+mc[2]+mc[3]+mc[4]+mc[5]);
+  }
+  // Tenta identificar qual CNPJ pertence a uma loja cadastrada
+  for(var j=0;j<todosOsCnpjs.length;j++){
+    var cnpjNum=todosOsCnpjs[j];
+    var lojaMatch=lojas.find(function(l){return(l.cnpj||'').replace(/\D/g,'')==cnpjNum});
+    if(lojaMatch){c.cnpjDestinatario=cnpjNum;break;}
+  }
+
+  return c;
+}
+
+function preencherFormNF(campos,nomeArquivo){
+  var status=document.getElementById('nfIaStatus');
+  var area=document.getElementById('nfUploadArea');
+  var preenchidos=0;
+
+  if(campos.numero){
+    // Remove zeros à esquerda desnecessários mas mantém formato
+    document.getElementById('fNumero').value=campos.numero;
+    preenchidos++;
+  }
+  if(campos.dataEmissao){
+    document.getElementById('fDataEmissao').value=campos.dataEmissao;
+    preenchidos++;
+  }
+  if(campos.valorTotal){
+    var vf=parseFloat(String(campos.valorTotal).replace(',','.'));
+    if(!isNaN(vf)){
+      document.getElementById('fValor').value=vf.toFixed(2).replace('.',',');
+      preenchidos++;
+    }
+  }
+  if(campos.pares){
+    var pi=parseInt(campos.pares);
+    if(pi>0){document.getElementById('fPares').value=pi;preenchidos++;}
+  }
+  if(campos.marca&&campos.marca!='null'&&campos.marca!==null){
+    document.getElementById('fMarca').value=campos.marca;
+    preenchidos++;
+  }
+  if(campos.defeito&&campos.defeito!='null'&&campos.defeito!==null){
+    document.getElementById('fDefeito').value=campos.defeito;
+    preenchidos++;
+  }
+
+  // Identificar loja pelo CNPJ do destinatário OU emitente (dependendo do tipo de NF)
+  var cnpjsParaBuscar=[campos.cnpjDestinatario,campos.cnpjEmitente].filter(Boolean);
+  var lojaEncontrada=false;
+  for(var i=0;i<cnpjsParaBuscar.length;i++){
+    var cnpjNum=String(cnpjsParaBuscar[i]).replace(/\D/g,'');
+    var lojaMatch=lojas.find(function(l){return(l.cnpj||'').replace(/\D/g,'')==cnpjNum});
+    if(lojaMatch){
+      document.getElementById('fLoja').value=lojaMatch.id;
+      preenchidos++;
+      lojaEncontrada=true;
+      break;
+    }
+  }
+
+  // Status padrão: emitida
+  if(!document.getElementById('fStatus').value){
+    document.getElementById('fStatus').value='emitida';
+  }
+
+  var msgLoja=lojaEncontrada?' + loja identificada':'';
+  status.style.display='flex';
+  status.style.background='rgba(34,197,94,.08)';
+  status.style.border='1px solid var(--green)';
+  status.style.color='var(--green)';
+  status.innerHTML='<span style="font-size:18px">✅</span><span>'+preenchidos+' campos preenchidos automaticamente'+msgLoja+' — revise e salve</span>';
+
+  area.innerHTML='<div style="font-size:12px;color:var(--text2);padding:4px 0">📄 '+(nomeArquivo||'arquivo')+' <span style="color:var(--green);font-weight:700">✓ lido</span> &nbsp;<span onclick="resetNfUpload()" style="cursor:pointer;color:var(--accent)">trocar arquivo</span></div>';
+  area.style.padding='10px 16px';
+  area.style.pointerEvents='auto';
+}
+
+function resetNfUpload(){
+  var area=document.getElementById('nfUploadArea');
+  if(!area)return;
+  area.style.display='block';
+  area.style.padding='18px 16px';
+  area.style.pointerEvents='auto';
+  area.innerHTML=''
+    +'<div style="font-size:26px;margin-bottom:4px">📄</div>'
+    +'<div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--accent)">Anexar PDF da Nota Fiscal</div>'
+    +'<div style="font-size:11px;color:var(--text2);margin-top:2px">O sistema lê o PDF e preenche os campos automaticamente</div>'
+    +'<input type="file" id="nfPdfInput" accept=".pdf" style="display:none" onchange="lerNFcomIA(this)">';
+  var st=document.getElementById('nfIaStatus');
+  if(st)st.style.display='none';
+}
+
+// ── CONTATO DE COLETA ────────────────────────────────────────────────────
+var contatoColetaNFId=null;
+
+function openContatoColeta(id){
+  contatoColetaNFId=id;
+  var n=notas.find(function(x){return x.id===id});
+  if(!n)return;
+  var loja=lojas.find(function(l){return l.id===n.lojaId});
+  var nomeLoja=loja?'['+loja.numero+'] '+(loja.nomeFantasia||loja.nome):'';
+  document.getElementById('contatoColetaSubtitle').textContent='NF '+n.numero+' · '+nomeLoja;
+
+  // Preencher data de hoje
+  document.getElementById('ccData').value=today();
+  document.getElementById('ccCanal').value='';
+  document.getElementById('ccContato').value='';
+  document.getElementById('ccPrevisao').value='';
+  document.getElementById('ccObs').value='';
+
+  // Mostrar histórico de contatos anteriores
+  var hist=n.contatosColeta||[];
+  var hdiv=document.getElementById('historicoContatoColeta');
+  if(hist.length){
+    var canalIcon={'WhatsApp':'💬','Telefone':'📞','E-mail':'✉️','Visita':'🤝'};
+    hdiv.innerHTML='<div style="font-family:Syne,sans-serif;font-weight:700;font-size:12px;color:var(--text2);margin-bottom:8px;letter-spacing:.4px">CONTATOS ANTERIORES ('+hist.length+')</div>'
+      +'<div style="max-height:180px;overflow-y:auto;margin-bottom:14px">'
+      +hist.slice().reverse().map(function(c,i){
+        var icon=canalIcon[c.canal]||'📋';
+        return '<div style="background:var(--surface2);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:12px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+          +'<span style="font-weight:700;color:#f97316">'+icon+' '+c.canal+(c.contato?' · '+c.contato:'')+'</span>'
+          +'<div style="display:flex;gap:6px;align-items:center">'
+          +'<span style="color:var(--text2)">'+fmtDate(c.data)+'</span>'
+          +'<button onclick="deleteContatoColeta(\''+id+'\','+( hist.length-1-i)+')" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:12px;padding:0 2px" title="Remover">🗑</button>'
+          +'</div></div>'
+          +(c.obs?'<div style="color:var(--text2)">'+c.obs+'</div>':'')
+          +(c.previsao?'<div style="color:#f97316;margin-top:2px">📅 Previsão: '+fmtDate(c.previsao)+'</div>':'')
+          +'</div>';
+      }).join('')+'</div>';
+  } else {
+    hdiv.innerHTML='';
+  }
+
+  document.getElementById('modalContatoColeta').classList.add('open');
+}
+
+function closeContatoColeta(){
+  document.getElementById('modalContatoColeta').classList.remove('open');
+}
+
+function saveContatoColeta(){
+  var data=document.getElementById('ccData').value;
+  var canal=document.getElementById('ccCanal').value;
+  if(!data){alert('Informe a data do contato');return}
+  if(!canal){alert('Selecione o canal de contato');return}
+  var n=notas.find(function(x){return x.id===contatoColetaNFId});
+  if(!n)return;
+  if(!n.contatosColeta)n.contatosColeta=[];
+  n.contatosColeta.push({
+    data:data,
+    canal:canal,
+    contato:document.getElementById('ccContato').value.trim(),
+    previsao:document.getElementById('ccPrevisao').value||null,
+    obs:document.getElementById('ccObs').value.trim()
+  });
+  persist();
+  renderTable();
+  closeContatoColeta();
+  showToast('📞 Contato registrado — NF '+n.numero);
+}
+
+function deleteContatoColeta(id,idx){
+  if(!confirm('Remover este contato?'))return;
+  var n=notas.find(function(x){return x.id===id});
+  if(!n||!n.contatosColeta)return;
+  n.contatosColeta.splice(idx,1);
+  persist();
+  renderTable();
+  openContatoColeta(id);// reabrir para atualizar histórico
+}
+
+// ── SISTEMA DE BACKUP ─────────────────────────────────────────────────────
+var BACKUP_KEY='shoemix_backup_ts';
+var BACKUP_SNOOZE_KEY='shoemix_backup_snooze';
+var BACKUP_INTERVAL_DIAS=3; // lembrar a cada 3 dias
+
+function getUltimoBackup(){
+  try{return parseInt(localStorage.getItem(BACKUP_KEY)||'0')}catch(e){return 0}
+}
+
+function checkBackupLembrete(){
+  if(!notas.length&&!lojas.length)return; // nada para salvar
+  var agora=Date.now();
+  // Verificar snooze
+  try{
+    var snooze=parseInt(localStorage.getItem(BACKUP_SNOOZE_KEY)||'0');
+    if(snooze>agora)return; // ainda em snooze
+  }catch(e){}
+
+  var ultimo=getUltimoBackup();
+  var diasSemBackup=ultimo?Math.floor((agora-ultimo)/86400000):999;
+  var banner=document.getElementById('backupBanner');
+  var msg=document.getElementById('backupBannerMsg');
+  if(!banner)return;
+
+  if(diasSemBackup>=BACKUP_INTERVAL_DIAS){
+    var txtDias=ultimo?(diasSemBackup===1?'Ontem':'Há '+diasSemBackup+' dias'):'Nunca foi feito backup';
+    msg.innerHTML=txtDias+' · '+notas.length+' NFs e '+lojas.length+' lojas armazenadas apenas no navegador — <strong style="color:var(--green)">exporte o JSON para não perder os dados</strong>';
+    banner.style.display='flex';
+  } else {
+    banner.style.display='none';
+  }
+}
+
+function exportJSONBackup(){
+  exportJSON(); // reutiliza a função existente
+  localStorage.setItem(BACKUP_KEY, Date.now().toString());
+  localStorage.removeItem(BACKUP_SNOOZE_KEY);
+  document.getElementById('backupBanner').style.display='none';
+  showToast('✅ Backup salvo! Próximo lembrete em '+BACKUP_INTERVAL_DIAS+' dias.');
+}
+
+function dismissBackup(){
+  // Lembrar novamente amanhã
+  snoozeBackup(1);
+}
+
+function snoozeBackup(dias){
+  var snoozeAte=Date.now()+(dias*86400000);
+  localStorage.setItem(BACKUP_SNOOZE_KEY, snoozeAte.toString());
+  document.getElementById('backupBanner').style.display='none';
+}
+
+// ── RESUMO MENSAL ──────────────────────────────────────────────────────────
+function pctBar(p){var pp=Math.min(100,Math.round(p));return'<div class="pct-wrap"><span style="font-family:Syne,sans-serif;font-weight:700;color:'+(pp>=75?'var(--green)':pp>=40?'var(--yellow)':'var(--red)')+'">'+pp+'%</span><div class="pct-bg"><div class="pct-bar-inner" style="width:'+pp+'%"></div></div></div>'}
+
+function groupBy(arr,key){return arr.reduce(function(acc,item){var k=item[key]||'';if(!acc[k])acc[k]={notas:0,pares:0,valor:0,coletadas:0,naoColetadas:0,resolvidas:0};acc[k].notas++;acc[k].pares+=item.pares||0;acc[k].valor+=item.valor||0;if(item.status==='coletada'||item.status==='nao-coletada')acc[k].coletadas+=(item.status==='coletada'?1:0);if(item.status==='nao-coletada')acc[k].naoColetadas++;if(item.resolucao)acc[k].resolvidas++;return acc;},{})}
+
+function renderResumo(){
+  var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  // populate year selector
+  var anos=[...new Set(notas.map(function(n){return n.dataEmissao?n.dataEmissao.slice(0,4):null}).filter(Boolean))].sort().reverse();
+  if(!anos.length)anos=[new Date().getFullYear().toString()];
+  var anoSel=document.getElementById('resumoAno');
+  var curAno=anoSel.value;
+  anoSel.innerHTML=anos.map(function(a){return'<option value="'+a+'"'+(a===curAno||(!curAno&&a===anos[0])?' selected':'')+'>'+a+'</option>'}).join('');
+  var ano=anoSel.value||anos[0];
+
+  // populate marca/loja filters
+  var marcas=[...new Set(notas.map(function(n){return n.marca||''}).filter(Boolean))].sort();
+  var mFilt=document.getElementById('resumoMarcaFilt');var curM=mFilt.value;
+  mFilt.innerHTML='<option value="">Todas as Marcas</option>'+marcas.map(function(m){return'<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+'</option>'}).join('');
+
+  var lFilt=document.getElementById('resumoLojaFilt');var curL=lFilt.value;
+  var lAtivas=lojas.filter(function(l){return l.status==='ativa'});
+  lFilt.innerHTML='<option value="">Todas as Lojas</option>'+lAtivas.map(function(l){return'<option value="'+l.id+'"'+(l.id===curL?' selected':'')+'>['+l.numero+'] '+(l.nomeFantasia||l.nome)+'</option>'}).join('');
+
+  var filtMarca=mFilt.value;var filtLoja=lFilt.value;
+  var mesFEl=document.getElementById("resumoMesFilt");var filtMes=mesFEl?mesFEl.value:"";
+
+  // filter notas for this year + selected filters
+  var base=notas.filter(function(n){
+    if(!n.dataEmissao||n.dataEmissao.slice(0,4)!==ano)return false;
+    if(filtMes&&n.dataEmissao.slice(5,7)!==filtMes)return false;
+    if(filtMarca&&(n.marca||'')!==filtMarca)return false;
+    if(filtLoja&&n.lojaId!==filtLoja)return false;
+    return true;
+  });
+
+  var MNOMES={'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+  document.getElementById('resumoSub').textContent='Ano: '+ano+(filtMes?' / '+MNOMES[filtMes]:'')+(filtMarca?' · Marca: '+filtMarca:'')+(filtLoja?(() => {var l=lojas.find(function(x){return x.id===filtLoja});return l?' · Loja: '+(l.nomeFantasia||l.nome):'';})():'');
+
+  // KPI cards
+  var totNotas=base.length;
+  var totPares=base.reduce(function(a,n){return a+n.pares},0);
+  var totValor=base.reduce(function(a,n){return a+n.valor},0);
+  var totColetadas=base.filter(function(n){return n.status==='coletada'}).length;
+  var totResolvidas=base.filter(function(n){return n.resolucao}).length;
+  var totNaoColetadas=base.filter(function(n){return n.status==='nao-coletada'}).length;
+  var pctRes=totNotas>0?Math.round(totResolvidas/totNotas*100):0;
+  document.getElementById('resumoKpis').innerHTML=[
+    {icon:'📋',val:totNotas,lbl:'Notas Emitidas',sub:(filtMes?MNOMES[filtMes]+'/'+ano:'no ano de '+ano),cls:'c-acc'},
+    {icon:'👟',val:totPares.toLocaleString('pt-BR'),lbl:'Total de Pares',sub:'em '+totNotas+' notas',cls:'c-blue'},
+    {icon:'💰',val:fmtMoney(totValor),lbl:'Valor Total',sub:'líquido das notas',cls:'c-grn'},
+    {icon:'✅',val:totColetadas,lbl:'Coletadas',sub:Math.round(totColetadas/(totNotas||1)*100)+'% do total',cls:'c-grn'},
+    {icon:'❌',val:totNaoColetadas,lbl:'Não Coletadas',sub:'aguardando ação',cls:'c-red'},
+    {icon:'🔁',val:pctRes+'%',lbl:'Resolvidas',sub:totResolvidas+' de '+totNotas+' notas',cls:'c-yel'},
+  ].map(function(k){return'<div class="kpi-card '+k.cls+'"><div class="kpi-icon">'+k.icon+'</div><div class="kpi-value">'+k.val+'</div><div class="kpi-label">'+k.lbl+'</div><div class="kpi-sub">'+k.sub+'</div></div>'}).join('');
+
+  // TABLE: por mês
+  var mesData={};
+  for(var m=0;m<12;m++){var key=ano+'-'+(m<9?'0':'')+(m+1);mesData[key]={mes:m,notas:0,pares:0,valor:0,coletadas:0,naoColetadas:0,resolvidas:0}}
+  base.forEach(function(n){var k=n.dataEmissao.slice(0,7);if(mesData[k]){mesData[k].notas++;mesData[k].pares+=n.pares||0;mesData[k].valor+=n.valor||0;if(n.status==='coletada')mesData[k].coletadas++;if(n.status==='nao-coletada')mesData[k].naoColetadas++;if(n.resolucao)mesData[k].resolvidas++;}});
+  var mesRows=Object.keys(mesData).filter(function(k){return mesData[k].notas>0}).sort();
+  var mesEmpty=document.getElementById('resumoMesEmpty');
+  var mesTbody=document.getElementById('resumoMesBody');
+  if(!mesRows.length){mesTbody.innerHTML='';mesEmpty.style.display='block';}
+  else{
+    mesEmpty.style.display='none';
+    // totals row
+    var tN=0,tP=0,tV=0,tC=0,tNC=0,tR=0;
+    mesRows.forEach(function(k){tN+=mesData[k].notas;tP+=mesData[k].pares;tV+=mesData[k].valor;tC+=mesData[k].coletadas;tNC+=mesData[k].naoColetadas;tR+=mesData[k].resolvidas});
+    mesTbody.innerHTML=mesRows.map(function(k){var d=mesData[k];var pct=d.notas>0?d.resolvidas/d.notas*100:0;return'<tr><td style="font-weight:600">'+MESES[d.mes]+' / '+ano+'</td><td style="font-family:Syne,sans-serif;font-weight:700">'+d.notas+'</td><td style="font-family:Syne,sans-serif">'+d.pares.toLocaleString('pt-BR')+'</td><td class="valor-cell">'+fmtMoney(d.valor)+'</td><td style="color:var(--green)">'+d.coletadas+'</td><td style="color:var(--red)">'+d.naoColetadas+'</td><td style="color:var(--yellow)">'+d.resolvidas+'</td><td>'+pctBar(pct)+'</td></tr>'}).join('')+'<tr class="row-total"><td>TOTAL '+ano+'</td><td>'+tN+'</td><td>'+tP.toLocaleString('pt-BR')+'</td><td class="valor-cell">'+fmtMoney(tV)+'</td><td style="color:var(--green)">'+tC+'</td><td style="color:var(--red)">'+tNC+'</td><td style="color:var(--yellow)">'+tR+'</td><td>'+pctBar(tN>0?tR/tN*100:0)+'</td></tr>';
+  }
+
+  // TABLE: por marca
+  var marcaData=groupBy(base,'marca');
+  var marcaKeys=Object.keys(marcaData).sort();
+  var marcaEmpty=document.getElementById('resumoMarcaEmpty');
+  var marcaTbody=document.getElementById('resumoMarcaBody');
+  if(!marcaKeys.length){marcaTbody.innerHTML='';marcaEmpty.style.display='block';}
+  else{marcaEmpty.style.display='none';marcaTbody.innerHTML=marcaKeys.map(function(k){var d=marcaData[k];var pct=d.notas>0?d.resolvidas/d.notas*100:0;return'<tr><td class="td-marca">'+(k||'Sem marca')+'</td><td style="font-family:Syne,sans-serif;font-weight:700">'+d.notas+'</td><td>'+d.pares.toLocaleString('pt-BR')+'</td><td class="valor-cell">'+fmtMoney(d.valor)+'</td><td style="color:var(--green)">'+d.coletadas+'</td><td style="color:var(--yellow)">'+d.resolvidas+'</td><td>'+pctBar(pct)+'</td></tr>'}).join('');}
+
+  // TABLE: por loja
+  var lojaEmpty=document.getElementById('resumoLojaEmpty');
+  var lojaTbody=document.getElementById('resumoLojaBody');
+  var lojaData={};
+  base.forEach(function(n){var k=n.lojaId||'';if(!lojaData[k])lojaData[k]={notas:0,pares:0,valor:0,coletadas:0,resolvidas:0};lojaData[k].notas++;lojaData[k].pares+=n.pares||0;lojaData[k].valor+=n.valor||0;if(n.status==='coletada')lojaData[k].coletadas++;if(n.resolucao)lojaData[k].resolvidas++;});
+  var lojaKeys=Object.keys(lojaData).sort(function(a,b){return lojaData[b].valor-lojaData[a].valor});
+  if(!lojaKeys.length){lojaTbody.innerHTML='';lojaEmpty.style.display='block';}
+  else{lojaEmpty.style.display='none';lojaTbody.innerHTML=lojaKeys.map(function(k){var d=lojaData[k];var loja=lojas.find(function(l){return l.id===k});var nomeL=loja?'['+loja.numero+'] '+(loja.nomeFantasia||loja.nome):(k||'Desconhecida');var pct=d.notas>0?d.resolvidas/d.notas*100:0;return'<tr><td><div class="td-nome">'+nomeL+'</div></td><td style="font-family:Syne,sans-serif;font-weight:700">'+d.notas+'</td><td>'+d.pares.toLocaleString('pt-BR')+'</td><td class="valor-cell">'+fmtMoney(d.valor)+'</td><td style="color:var(--green)">'+d.coletadas+'</td><td style="color:var(--yellow)">'+d.resolvidas+'</td><td>'+pctBar(pct)+'</td></tr>'}).join('');}
+}
+
+function exportResumoCSV(){
+  var ano=document.getElementById('resumoAno').value;
+  var filtMarca=document.getElementById('resumoMarcaFilt').value;
+  var filtLoja=document.getElementById('resumoLojaFilt').value;
+  var MESES2=['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var base=notas.filter(function(n){
+    if(!n.dataEmissao||n.dataEmissao.slice(0,4)!==ano)return false;
+    if(filtMes&&n.dataEmissao.slice(5,7)!==filtMes)return false;
+    if(filtMarca&&(n.marca||'')!==filtMarca)return false;
+    if(filtLoja&&n.lojaId!==filtLoja)return false;
+    return true;
+  });
+  var rows=[['Mes','Notas','Pares','Valor Total','Coletadas','Nao Coletadas','Resolvidas','% Resolvido']];
+  var mesData={};for(var m=0;m<12;m++){var key=ano+'-'+(m<9?'0':'')+(m+1);mesData[key]={mes:m,notas:0,pares:0,valor:0,coletadas:0,naoColetadas:0,resolvidas:0}}
+  base.forEach(function(n){var k=n.dataEmissao.slice(0,7);if(mesData[k]){mesData[k].notas++;mesData[k].pares+=n.pares||0;mesData[k].valor+=n.valor||0;if(n.status==='coletada')mesData[k].coletadas++;if(n.status==='nao-coletada')mesData[k].naoColetadas++;if(n.resolucao)mesData[k].resolvidas++;}});
+  Object.keys(mesData).filter(function(k){return mesData[k].notas>0}).forEach(function(k){var d=mesData[k];rows.push([MESES2[d.mes]+'/'+ano,d.notas,d.pares,d.valor.toFixed(2).replace('.',','),d.coletadas,d.naoColetadas,d.resolvidas,Math.round(d.notas>0?d.resolvidas/d.notas*100:0)+'%'])});
+  var csv=rows.map(function(r){return r.join(';')}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='shoemix-resumo-'+ano+'.csv';a.click();URL.revokeObjectURL(a.href);
+  showToast('✅ CSV exportado!');
+}
+
+function init(){
+  persist();populateLojasSelect();renderTable();updateStats();populateMarcasDatalist();
+  if(window.innerWidth<=768)requestAnimationFrame(toggleTable);
+  checkDraft();
+  checkBackupLembrete();
+  // Autosave on page unload (save draft if modal open)
+  window.addEventListener('beforeunload',function(){
+    var nfOpen=document.getElementById('modalNF').classList.contains('open');
+    var lojaOpen=document.getElementById('modalLoja').classList.contains('open');
+    if(nfOpen){var loja=document.getElementById('fLoja').value,num=document.getElementById('fNumero').value.trim();if(loja||num)saveDraft('nf',{lojaId:loja,numero:num,dataEmissao:document.getElementById('fDataEmissao').value,pares:document.getElementById('fPares').value,valor:document.getElementById('fValor').value,status:document.getElementById('fStatus').value,dataColeta:document.getElementById('fDataColeta').value,transportadora:document.getElementById('fTransportadora').value,obsColeta:document.getElementById('fObsColeta').value,defeito:document.getElementById('fDefeito').value});}
+    if(lojaOpen){var n=document.getElementById('lNumero').value.trim(),nm=document.getElementById('lNome').value.trim();if(n||nm)saveDraft('loja',{numero:n,nome:nm});}
+  });
+}
+init();
+</script>
+</body>
+</html>
